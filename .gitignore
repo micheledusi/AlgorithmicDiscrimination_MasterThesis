@@ -130,3 +130,6 @@ dmypy.json
 
 # Idea folder
 .idea/
+
+# Ignoring saved models, that can be re-created
+saved/models/*
