@@ -9,10 +9,13 @@ import torch
 from transformers import BertTokenizer, BertModel
 
 # Defines the used pre-trained BERT model
+# DEFAULT_BERT_MODEL: str = "roberta-base"
 DEFAULT_BERT_MODEL: str = "bert-base-uncased"
 # Defines the template
 STANDARDIZED_EMBEDDING_TEMPLATE: str = "[CLS] %s [SEP]"
 STANDARDIZED_EMBEDDING_WORD_INDEX: int = 1
+
+models_singletons: dict[str, tuple] = {}
 
 
 class WordEncoder:
@@ -23,13 +26,25 @@ class WordEncoder:
 	This class standardized the model and the template, offering a simple method to extract the embedding of the
 	$OCCUPATION	for the desired layers.
 	"""
+
 	def __init__(self, bert_model: str = DEFAULT_BERT_MODEL):
 		print("Loading encoder model...", end="")
-		self.__tokenizer = BertTokenizer.from_pretrained(bert_model)
-		self.__model = BertModel.from_pretrained(bert_model, output_hidden_states=True)
+		self.__tokenizer, self.__model = WordEncoder.get_bert_model(bert_model)
 		print("Completed.")
 		self.__embedding_template: str = STANDARDIZED_EMBEDDING_TEMPLATE
 		self.__embedding_word_index: int = STANDARDIZED_EMBEDDING_WORD_INDEX
+
+	@staticmethod
+	def get_bert_model(bert_model: str):
+		"""
+		Creates singletons based on necessity.
+		:return: A tuple composed of a tokenizer and an encoder
+		"""
+		if bert_model not in models_singletons:
+			tokenizer = BertTokenizer.from_pretrained(bert_model)
+			model = BertModel.from_pretrained(bert_model, output_hidden_states=True)
+			models_singletons[bert_model] = (tokenizer, model)
+		return models_singletons[bert_model]
 
 	@property
 	def tokenizer(self):
@@ -52,8 +67,8 @@ class WordEncoder:
 		Sets the template used to extract the embedding of a single word.
 		Note that this class WILL NOT automatically add the [CLS] and [SEP] tokens at the beginning and at the end. If
 		you want those tokens in your sentence, please add them manually to the template.
-		:param template: The template containing the <%%s> token, where the word will be placed.
-		:param word_index: The index of the <%%s> token. To avoid incorrect inference, this has to be set by hand.
+		:param template: The template containing the <%s> token, where the word will be placed.
+		:param word_index: The index of the <%s> token. To avoid incorrect inference, this has to be set by hand.
 		:return: None
 		"""
 		self.__embedding_template = template
@@ -70,10 +85,16 @@ class WordEncoder:
 		sentence = self.embedding_template % word
 		# Tokenizing and returning PyTorch tensors
 		tokens_encoding = self.tokenizer.encode_plus(sentence,
-													 add_special_tokens=False,
-													 truncation=True,
-													 return_attention_mask=False,
-													 return_tensors="pt")
+		                                             add_special_tokens=False,
+		                                             truncation=True,
+		                                             return_attention_mask=False,
+		                                             return_tensors="pt")
+
+		# print(f"{word}, {len(tokens_encoding.input_ids[0])}")
+		# if len(tokens_encoding.input_ids[0]) != 6:
+		# 	print(word)
+		# 	return None
+
 		# We process the tokens with the BERT model
 		embeddings = self.model(**tokens_encoding)
 
