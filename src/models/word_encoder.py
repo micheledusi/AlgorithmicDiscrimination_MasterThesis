@@ -74,26 +74,46 @@ class WordEncoder:
 		self.__embedding_template = template
 		self.__embedding_word_index = word_index
 
-	def embed_word(self, word: str, layers: list[int] = "all") -> torch.Tensor:
+	def embed_word(self, word: str, layers: list[int] | range = "all", only_first_token: bool = True) -> torch.Tensor:
 		"""
 		From a given word, returns its embeddings (for the desired layers) within the standard sentence-context.
+		If the word is split in multiple tokens, all the tokens can be considered if the <only_first_token> param is False.
+		Otherwise, only the embeddings for the first token are returned.
 		:param word: The word to embed.
 		:param layers: The desired layers of embeddings.
-		:return: A matrix (PyTorch 2D-Tensor) of dimensions [# layers, # features] containing the embedding of the word
+		:param only_first_token: If True, returns only the embeddings ofr the first token. Otherwise,
+			it returns all the tokens in which the word is split.
+		:return: A 3d-matrix (PyTorch 3D-Tensor) of dimensions [# tokens, # layers, # features] containing
+			the embedding of the word. Otherwise, if only the first token is returned, the tensor is a 2D matrix.
 		"""
 		# Building the standard template used to extract embeddings
 		sentence = self.embedding_template % word
 		# Tokenizing and returning PyTorch tensors
-		tokens_encoding = self.tokenizer.encode_plus(sentence,
-		                                             add_special_tokens=False,
-		                                             truncation=True,
-		                                             return_attention_mask=False,
-		                                             return_tensors="pt")
+		tokens_encoding = self.tokenizer(sentence,
+                                         add_special_tokens=False,
+                                         truncation=False,
+                                         return_attention_mask=False,
+                                         return_tensors="pt")
 
-		# print(f"{word}, {len(tokens_encoding.input_ids[0])}")
-		# if len(tokens_encoding.input_ids[0]) != 6:
-		# 	print(word)
-		# 	return None
+		# Trying to understand what tokens are formed from the word
+		# Extracting all the tokens
+		tokens = self.tokenizer.tokenize(sentence)
+		# Checks if the token is not equal to the original word
+		# WARNING: WE ASSUME THE EMBEDDING_WORD_INDEX IS CORRECT!!!
+		tokens_n: int = 1
+		if tokens[self.embedding_word_index] != word:
+			# print(f"Word <{word}> is not equal to token <{tokens[self.embedding_word_index]}>")
+			for tok in tokens[(self.embedding_word_index + 1):]:
+				if tok.startswith("##"):
+					# If the token is a sub-word of the original word
+					# print(f"\ttoken = {tok}")
+					tokens_n += 1
+				else:
+					break
+			# print("Total of tokens: ", tokens_n)
+		# At the end, we obtain the indexes for the word tokens
+		word_indexes = slice(self.embedding_word_index, self.embedding_word_index + tokens_n)
+		print(f"Tokens: {tokens[word_indexes]}")
 
 		# We process the tokens with the BERT model
 		embeddings = self.model(**tokens_encoding)
@@ -105,17 +125,39 @@ class WordEncoder:
 		embeddings = torch.stack(embeddings.hidden_states, dim=0)
 		# Now we remove the second dimension (batches) since it's unused
 		embeddings = torch.squeeze(embeddings, dim=1)
-		# Now we permute dimensions, bringing the tokens dimension first:
-		# From [# all_layers, # tokens, # features]
-		# To [# tokens, # all_layers, # features]
-		embeddings = embeddings.permute(1, 0, 2)
 
-		# Now we extract the single embedding for the WORD token
-		word_embedding = embeddings[self.embedding_word_index]
-		# And finally, only the selected layers are extracted
+		# We now have the layers as the first dimension:
+		# [# all_layers, # tokens, # features]
+		# We extract the selected layers
 		if layers == "all":
-			layers_embedding = word_embedding
+			layers_embedding = embeddings
 		else:
-			layers_embedding = word_embedding[layers]
-		# The final tensor has dimensions: [# desired_layers, # features]
-		return layers_embedding
+			if isinstance(layers, range):
+				layers = list(layers)
+			layers_embedding = embeddings[layers]
+
+		# Now we permute dimensions, bringing the tokens dimension first:
+		# From [# layers, # tokens, # features]
+		# To [# tokens, # layers, # features]
+		layers_embedding = layers_embedding.permute(1, 0, 2)
+
+		# Now we extract the single embedding for the WORD tokens
+		word_embedding = layers_embedding[word_indexes]
+		if only_first_token:
+			word_embedding = word_embedding[0]
+		# The final tensor has dimensions: [# tokens, # desired_layers, # features]
+		return word_embedding
+
+	def embed_word_merged(self, word: str, layers: list[int] | range = "all") -> torch.Tensor:
+		"""
+		From a given word, returns its embeddings (for the desired layers) within the standard sentence-context.
+		If the word is split into multiple tokens, the embeddings for the tokens are averaged.
+		This assures only one token in return.
+
+		:param word: The word to embed.
+		:param layers: The desired layers of embeddings.
+		:return: A matrix (PyTorch 2D-tensor) of dimensions [# layers, # features] for the embeddings.
+		"""
+		word_embedding = self.embed_word(word, layers, only_first_token=False)
+		return torch.mean(word_embedding, dim=0)
+
