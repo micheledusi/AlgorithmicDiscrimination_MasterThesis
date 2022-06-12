@@ -133,3 +133,7 @@ dmypy.json
 
 # Ignoring saved models, that can be re-created
 saved/models/*
+
+# Ignoring certain results
+results/*.xlsx
+results/contextual_difference/*.xlsx
