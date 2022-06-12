@@ -2,63 +2,170 @@
 #                            Dusi's Thesis                              #
 # Algorithmic Discrimination and Natural Language Processing Techniques #
 #########################################################################
+import numpy as np
 
 from src.models.word_encoder import WordEncoder
+from src.models.embeddings_comparator import *
 from src.parsers.occupations_parser import OccupationsParser
 from src.viewers.plot_scatter_embeddings import EmbeddingsScatterPlotter
 import torch
 import matplotlib.pyplot as plt
 from matplotlib.colors import Normalize
 
+templates_i: list[tuple[str, int]] = [
+	("[CLS] i am a %s [SEP]", 4),
+	("[CLS] i worked as a %s [SEP]", 5),
+	("[CLS] i studied for years to become %s [SEP]", 7),
+	("[CLS] finally i found a job as a %s [SEP]", 8),
+	("[CLS] when i grow up i want to become a %s [SEP]", 10),
+	("[CLS] someday i will be %s [SEP]", 5),
+]
+
+templates_you: list[tuple[str, int]] = [
+	("[CLS] you are a %s [SEP]", 4),
+	("[CLS] you worked as a %s [SEP]", 5),
+	("[CLS] you studied for years to become %s [SEP]", 7),
+	("[CLS] finally you found a job as a %s [SEP]", 8),
+	("[CLS] when you grow up you want to become a %s [SEP]", 10),
+	("[CLS] someday you will be %s [SEP]", 5),
+]
+
+templates_he: list[tuple[str, int]] = [
+	("[CLS] he is a %s [SEP]", 4),
+	("[CLS] he worked as a %s [SEP]", 5),
+	("[CLS] he studied for years to become %s [SEP]", 7),
+	("[CLS] finally he found a job as a %s [SEP]", 8),
+	("[CLS] when he grows up he wants to become a %s [SEP]", 10),
+	("[CLS] someday he will be %s [SEP]", 5),
+]
+
+templates_she: list[tuple[str, int]] = [
+	("[CLS] she is a %s [SEP]", 4),
+	("[CLS] she worked as a %s [SEP]", 5),
+	("[CLS] she studied for years to become %s [SEP]", 7),
+	("[CLS] finally she found a job as a %s [SEP]", 8),
+	("[CLS] when she grows up he wants to become a %s [SEP]", 10),
+	("[CLS] someday she will be %s [SEP]", 5),
+]
+
+templates_they: list[tuple[str, int]] = [
+	("[CLS] they are a %s [SEP]", 4),
+	("[CLS] they worked as a %s [SEP]", 5),
+	("[CLS] they studied for years to become %s [SEP]", 7),
+	("[CLS] finally they found a job as a %s [SEP]", 8),
+	("[CLS] when they grow up they want to become a %s [SEP]", 10),
+	("[CLS] someday they will be %s [SEP]", 5),
+]
+
+templates: dict = {
+	"i":    templates_i,
+	"you":  templates_you,
+	"he":   templates_he,
+	"she":  templates_she,
+	"they": templates_they,
+}
+
+
+SELECTED_LAYERS: range = range(12, 13)
+
+
+def compute_contextual_embedding(encoder: WordEncoder, word: str, layers) -> dict:
+	"""
+	Computes the embedding of a single word.
+	The embedding is a dictionary with the pronouns as keys: "i", "you", "he", "she", "they".
+	For each pronoun, a list of tensor is computed: one tensor for each template.
+	The tensor is the result of the encoder model and comprehends all the selected layers in input to this function.
+	:param encoder: The encoding model.
+	:param word: The input word to the model
+	:param layers: The selected layers to analyze
+	:return: The dictionary of lists of tensors.
+	"""
+	embeddings: dict[str, list[torch.Tensor]] = {}
+	for pron, templates_list in templates.items():
+		pron_embeddings: list = []
+		for tmpl, word_ix in templates_list:
+			encoder.set_embedding_template(template=tmpl, word_index=word_ix)
+			word_embedding = encoder.embed_word_merged(word, layers)
+			pron_embeddings.append(word_embedding)
+		embeddings[pron] = pron_embeddings
+	return embeddings
+
+
+def compute_contextual_embeddings_list(words: list[str]) -> dict:
+	"""
+	Computes the list of embeddings for each input word.
+	:param words: The list of words
+	:return: The dictionary associating words and embeddings
+	"""
+	encoder = WordEncoder()
+	embeddings: dict[str, dict] = {}
+	for w in words:
+		word_embeddings = compute_contextual_embedding(encoder, w, SELECTED_LAYERS)
+		embeddings[w] = word_embeddings
+	return embeddings
+
 
 def launch() -> None:
-	enc_m, enc_f = WordEncoder(), WordEncoder()
-	enc_m.set_embedding_template("[CLS] he worked as a %s [SEP]", 5)
-	enc_f.set_embedding_template("[CLS] she worked as a %s [SEP]", 5)
-
-	# enc_n.set_embedding_template("[CLS] %s [SEP]", 1)
-	# enc_n.set_embedding_template("[CLS] I work as %s [SEP]", 4)
-
-	# Extracting the list of occupations sorted by the highest female percentage, from WinoGender dataset
+	# Extracting the list of occupations from WinoGender dataset
 	parser = OccupationsParser()
-	occs_number = 60
-	occs_list = [*parser.get_sorted_female_occupations(max_length=(occs_number // 2), stat_name="bls", female_percentage="highest"),
-	             *parser.get_sorted_female_occupations(max_length=(occs_number // 2), stat_name="bls", female_percentage="lowest")]
+	occs_list: list[str] = parser.occupations_list
 
-	selected_layers = range(0, 13)
-	emb_list_m = []
-	emb_list_f = []
-	occ_list_m = []
-	occ_list_f = []
+	# Computing the embeddings
+	occs_embs: dict = compute_contextual_embeddings_list(occs_list)
+
 	measures = {}
-	similarity_fun = torch.nn.CosineSimilarity(dim=1)
+	comparator = EmbeddingsComparator()
+	# Pair euclidean distance
+	comparator.add_metric(PairEuclideanDistance("he", "she"))
+	comparator.add_metric(PairEuclideanDistance("he", "i"))
+	comparator.add_metric(PairEuclideanDistance("she", "i"))
+	comparator.add_metric(PairEuclideanDistance("he", "you"))
+	comparator.add_metric(PairEuclideanDistance("she", "you"))
+	comparator.add_metric(PairEuclideanDistance("he", "they"))
+	comparator.add_metric(PairEuclideanDistance("she", "they"))
+	comparator.add_metric(PairEuclideanDistance("i", "you"))
+	# Sum of three euclidean distances
+	comparator.add_metric(TripleEuclideanDistance("he", "she", "i"))
+	comparator.add_metric(TripleEuclideanDistance("he", "she", "you"))
+	comparator.add_metric(TripleEuclideanDistance("he", "she", "they"))
+	comparator.add_metric(TripleEuclideanDistance("i", "you", "they"))
+	# Euclidean distance from a center
+	comparator.add_metric(EuclideanCenterDistance("he", "she", "i"))
+	comparator.add_metric(EuclideanCenterDistance("he", "she", "you"))
+	comparator.add_metric(EuclideanCenterDistance("he", "she", "they"))
+	comparator.add_metric(EuclideanCenterDistance("i", "you", "they"))
+	comparator.add_metric(EuclideanCenterDistance("he", "i", "you", "they"))
+	comparator.add_metric(EuclideanCenterDistance("she", "i", "you", "they"))
+	comparator.add_metric(EuclideanCenterDistance("he", "she", "i", "you", "they"))
+	# Pair cosine similarity
+	comparator.add_metric(PairCosineSimilarity("he", "she"))
+	comparator.add_metric(PairCosineSimilarity("he", "i"))
+	comparator.add_metric(PairCosineSimilarity("she", "i"))
+	comparator.add_metric(PairCosineSimilarity("he", "you"))
+	comparator.add_metric(PairCosineSimilarity("she", "you"))
+	comparator.add_metric(PairCosineSimilarity("he", "they"))
+	comparator.add_metric(PairCosineSimilarity("she", "they"))
+	comparator.add_metric(PairCosineSimilarity("i", "you"))
+	# Product of three cosine similarities
+	comparator.add_metric(TripleCosineSimilarity("he", "she", "i"))
+	comparator.add_metric(TripleCosineSimilarity("he", "she", "you"))
+	comparator.add_metric(TripleCosineSimilarity("he", "she", "they"))
+	comparator.add_metric(TripleCosineSimilarity("i", "you", "they"))
 
-	# For every occupation
-	for occ, pct in occs_list:
-		# <occ> is the occupation string
-		# <pct> is the percentage float indicating the female presence in the real-world occupation
-		# print(f"\tStudying embeddings for word <{occ}> in layers {selected_layers}")
+	# Computing and writing results
+	sep = DEFAULT_SEPARATOR
+	np.set_printoptions(precision=10)
+	with open("results/contextual_difference/metrics_lastlevel.csv", "w") as f:
+		header: str = f"word{sep}{comparator.names_header()}{sep}stat_bergsma{sep}stat_bls"
+		print(header, file=f)
+		for word, word_embs in occs_embs.items():
+			metrics = comparator(word_embs)
+			print(word, end=sep, file=f)
+			for m in metrics:
+				print(m.detach().numpy()[0], end=sep, file=f)
+			print(f"{parser.get_percentage(word, stat_name='bergsma')}{sep}{parser.get_percentage(word, stat_name='bls')}", file=f)
 
-		emb_m = enc_m.embed_word_merged(occ, layers=selected_layers)
-		emb_f = enc_f.embed_word_merged(occ, layers=selected_layers)
-		emb_list_m.append(emb_m)
-		emb_list_f.append(emb_f)
-
-		occ_list_m.append(occ + "_m")
-		occ_list_f.append(occ + "_f")
-
-		# Computing metrics
-		male_pct: float = 100.0 - pct
-		pct_dist: float = abs(pct - male_pct)
-		emb_simi = similarity_fun(emb_m, emb_f)
-		emb_dist = (emb_m - emb_f).pow(2).sum(1).sqrt()     # Computes euclidean distance by layers
-		# Adding results to the measures dictionary
-		measures[occ] = (pct_dist, emb_simi, emb_dist)
-
-	# Turning embeddings lists into PyTorch tensors
-	embeddings = torch.stack([*emb_list_m, *emb_list_f])
-	print("Embeddings size: ", embeddings.size())
-
+	"""
 	# Visualizing embeddings
 	plotter = EmbeddingsScatterPlotter(embeddings)
 	plotter.colors = [*([0] * occs_number), *([1] * occs_number)]
@@ -96,7 +203,7 @@ def launch() -> None:
 	corr_tensor = torch.stack([torch.Tensor(pearson_x), torch.Tensor(pearson_y)])
 	corr = torch.corrcoef(corr_tensor)[0][1]
 	print("Correlation coefficient between real word disparity and measured cosine similarity: ", corr)
-
+	"""
 	return
 
 
