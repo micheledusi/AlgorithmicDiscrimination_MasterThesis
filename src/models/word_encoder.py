@@ -113,7 +113,7 @@ class WordEncoder:
 			# print("Total of tokens: ", tokens_n)
 		# At the end, we obtain the indexes for the word tokens
 		word_indexes = slice(self.embedding_word_index, self.embedding_word_index + tokens_n)
-		print(f"Tokens: {tokens[word_indexes]}")
+		# print(f"Tokens: {tokens[word_indexes]}")
 
 		# We process the tokens with the BERT model
 		embeddings = self.model(**tokens_encoding)
