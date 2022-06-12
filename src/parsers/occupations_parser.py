@@ -53,7 +53,7 @@ class OccupationsParser:
 		return list(self.__occupations.keys())
 
 	def get_sorted_female_occupations(self, max_length: int = -1,
-	                                  stat_name: str = STAT_BERGSMA,
+	                                  stat_name: str = STAT_BLS,
 	                                  female_percentage: str = "highest") -> list[tuple[str, float]]:
 		"""
 		:param stat_name: The name of the used statistic. Default is "bergsma".
@@ -73,6 +73,19 @@ class OccupationsParser:
 			occs_dict = occs_dict[:max_length]
 
 		return occs_dict
+
+	def get_percentage(self, occupation_word: str, stat_name: str = STAT_BLS) -> float:
+		"""
+		Returns the percentage of a given job word, if contained in the dictionary.
+		Otherwise, it returns (-1).
+		:param occupation_word: The given occupation word
+		:param stat_name: "bls" or "bergsma", the name of the dataset
+		:return: The float percentage, a number between 0 and 100
+		"""
+		if occupation_word in self.occupations:
+			return self.occupations[occupation_word][stat_name]
+		else:
+			return -1
 
 
 if __name__ == '__main__':
