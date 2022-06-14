@@ -166,7 +166,7 @@ class TripleCosineSimilarity(Metric):
 		                 ids=[id0, id1, id2])
 
 
-DEFAULT_SEPARATOR: str = ';'
+DEFAULT_SEPARATOR: str = '\t'
 
 
 class EmbeddingsComparator:
