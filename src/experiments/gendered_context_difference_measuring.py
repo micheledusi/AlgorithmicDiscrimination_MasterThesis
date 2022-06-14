@@ -2,8 +2,8 @@
 #                            Dusi's Thesis                              #
 # Algorithmic Discrimination and Natural Language Processing Techniques #
 #########################################################################
-import numpy as np
 
+import numpy as np
 from src.models.word_encoder import WordEncoder
 from src.models.embeddings_comparator import *
 from src.parsers.occupations_parser import OccupationsParser
@@ -11,6 +11,8 @@ from src.viewers.plot_scatter_embeddings import EmbeddingsScatterPlotter
 import torch
 import matplotlib.pyplot as plt
 from matplotlib.colors import Normalize
+import settings
+
 
 templates_i: list[tuple[str, int]] = [
 	("[CLS] i am a %s [SEP]", 4),
@@ -153,8 +155,8 @@ def launch() -> None:
 	comparator.add_metric(TripleCosineSimilarity("i", "you", "they"))
 
 	# Computing and writing results
-	elem_sep = ' '
-	col_sep = DEFAULT_SEPARATOR
+	elem_sep = settings.OUTPUT_TABLE_ARRAY_ELEM_SEPARATOR
+	col_sep = settings.OUTPUT_TABLE_COL_SEPARATOR
 	np.set_printoptions(precision=10)
 
 	def print_tensor_array(t: torch.Tensor) -> str:
@@ -174,7 +176,7 @@ def launch() -> None:
 			s += "]"
 			return s
 
-	with open("results/contextual_difference/metrics_lastlevel.tsv", "w") as f:
+	with open(f"results/contextual_difference/metrics_lastlevel.{settings.OUTPUT_TABLE_FILE_EXTENSION}", "w") as f:
 		header: str = f"word{col_sep}{comparator.names_header()}{col_sep}stat_bergsma{col_sep}stat_bls"
 		print(header, file=f)
 		for word, word_embs in occs_embs.items():

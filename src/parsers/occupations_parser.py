@@ -5,8 +5,10 @@
 
 import csv
 import sys
+import settings
 
-OCCUPATIONS_FILE = "data/WinoGender/occupation_stats.tsv"
+
+OCCUPATIONS_FILE = settings.FOLDER_DATA + "/WinoGender/occupation_stats.tsv"
 
 STAT_BERGSMA = "bergsma"
 STAT_BLS = "bls"

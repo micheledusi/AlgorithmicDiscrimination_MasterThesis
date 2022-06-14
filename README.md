@@ -17,6 +17,7 @@ in common algorithmic tecniques used to process natural languages (english and i
   - `src/parsers` contains the scripts used to parse datasets in the `data` folder.
   - `src/viewers` contains the scripts and classes used to produce outputs in the `results` folder.
 - `main.py` is the launching script.
+- `settings.py` centralizes some setting parameters for the whole project.
 
 ## Experiments
 We now describe briefly how the implemented experiments work:

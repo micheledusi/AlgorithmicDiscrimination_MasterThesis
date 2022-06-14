@@ -7,13 +7,8 @@
 
 import torch
 from transformers import BertTokenizer, BertModel
+import settings
 
-# Defines the used pre-trained BERT model
-# DEFAULT_BERT_MODEL: str = "roberta-base"
-DEFAULT_BERT_MODEL: str = "bert-base-uncased"
-# Defines the template
-STANDARDIZED_EMBEDDING_TEMPLATE: str = "[CLS] %s [SEP]"
-STANDARDIZED_EMBEDDING_WORD_INDEX: int = 1
 
 models_singletons: dict[str, tuple] = {}
 
@@ -27,12 +22,12 @@ class WordEncoder:
 	$OCCUPATION	for the desired layers.
 	"""
 
-	def __init__(self, bert_model: str = DEFAULT_BERT_MODEL):
+	def __init__(self, bert_model: str = settings.DEFAULT_BERT_MODEL_NAME):
 		print("Loading encoder model...", end="")
 		self.__tokenizer, self.__model = WordEncoder.get_bert_model(bert_model)
 		print("Completed.")
-		self.__embedding_template: str = STANDARDIZED_EMBEDDING_TEMPLATE
-		self.__embedding_word_index: int = STANDARDIZED_EMBEDDING_WORD_INDEX
+		self.__embedding_template: str = settings.DEFAULT_STANDARDIZED_EMBEDDING_TEMPLATE
+		self.__embedding_word_index: int = settings.DEFAULT_STANDARDIZED_EMBEDDING_WORD_INDEX
 
 	@staticmethod
 	def get_bert_model(bert_model: str):

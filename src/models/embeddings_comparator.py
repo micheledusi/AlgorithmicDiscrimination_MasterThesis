@@ -8,6 +8,7 @@
 import torch
 from torch import Tensor
 from typing import Callable
+import settings
 
 
 class Metric:
@@ -166,9 +167,6 @@ class TripleCosineSimilarity(Metric):
 		                 ids=[id0, id1, id2])
 
 
-DEFAULT_SEPARATOR: str = '\t'
-
-
 class EmbeddingsComparator:
 	"""
 	This class implements a list of metrics to be computed on a set of embeddings.
@@ -210,7 +208,7 @@ class EmbeddingsComparator:
 		"""
 		return [metric.__str__() for metric in self.__metrics]
 
-	def names_header(self, separator: str = DEFAULT_SEPARATOR) -> str:
+	def names_header(self, separator: str = settings.OUTPUT_TABLE_COL_SEPARATOR) -> str:
 		"""
 		Returns a properly formatted header for CSV and TSV files where the list of metrics names is required.
 		:param separator: A separator string interleaving the names of the metrics.

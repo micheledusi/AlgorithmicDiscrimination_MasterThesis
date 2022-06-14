@@ -13,8 +13,7 @@ from pathlib import Path
 from torch import Tensor, pca_lowrank, squeeze
 import matplotlib.pyplot as plt
 from matplotlib.colors import Normalize
-
-DEFAULT_COLORMAP: str = "cool"
+import settings
 
 
 class EmbeddingsScatterPlotter:
@@ -28,7 +27,7 @@ class EmbeddingsScatterPlotter:
 	__labels: [str] = None
 	__colors: [float] = None
 	__sizes: [float] = None
-	__colormap: str = DEFAULT_COLORMAP
+	__colormap: str = settings.GENDER_CYAN2PINK_COLORMAP_NAME
 	__cmap_norm: Normalize = None
 	__ready_to_show: bool = False
 
