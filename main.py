@@ -14,9 +14,9 @@ import torch
 if __name__ == '__main__':
     torch.manual_seed(settings.RANDOM_SEED)
 
-    # embeddings_spatial_analysis.launch()
-    # anomalies_surprise_detection.launch()
+    embeddings_spatial_analysis.launch()
     # gender_subspace_detection.launch()
+    # anomalies_surprise_detection.launch()
     # gendered_context_difference_measuring.launch()
-    gender_prediction.launch()
+    # gender_prediction.launch()
     pass

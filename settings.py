@@ -14,6 +14,7 @@ RANDOM_SEED: int = 42
 
 # Folders structure
 FOLDER_DATA = 'data'
+FOLDER_RESULTS = 'results'
 
 # ENCODING
 

@@ -18,7 +18,7 @@ TOKEN_OCC = "[OCC]"
 pronouns_templates = {
 	f"{TOKEN_MASK} worked as a {TOKEN_OCC}.": ["i", "you", "he", "she", "they"],
 	f"{TOKEN_MASK} studied for years to become a {TOKEN_OCC}.": ["i", "you", "he", "she", "they"],
-	f"One day {TOKEN_MASK}'ll be a {TOKEN_OCC}.": ["i", "you", "he", "she", "they"],
+	f"One day {TOKEN_MASK} will be a {TOKEN_OCC}.": ["i", "you", "he", "she", "they"],
 	f"{TOKEN_MASK} was a {TOKEN_OCC}.": ["i", "he", "she"],
 }
 # The three most frequent male and three most frequent female english names
