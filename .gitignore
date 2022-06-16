@@ -137,3 +137,5 @@ saved/models/*
 # Ignoring certain results
 results/*.xlsx
 results/contextual_difference/*.xlsx
+results/gender_prediction/tables/*.xlsx
+results/embeddings_space/img/*
