@@ -12,41 +12,46 @@ import torch
 from src.models.word_encoder import WordEncoder
 from src.viewers.plot_scatter_embeddings import EmbeddingsScatterPlotter
 from src.parsers.occupations_parser import OccupationsParser
+import settings
 
 # Output path
-OUTPUT_PATH = "results/embeddings_space"
+OUTPUT_PATH = settings.FOLDER_RESULTS + "/embeddings_space"
+# Considered layers
+LAYERS: range = range(0, 13)
 
 
-def plot_occupations_embeddings(enc: WordEncoder) -> None:
+def plot_occupations_embeddings(enc: WordEncoder, parser: OccupationsParser) -> None:
 	"""
 	This functions plots all the occupations contained in the WinoGender dataset.
 	Every profession is colored by its female percentage occupation: the female-occupied are magenta,
 	the male-occupied are cyan.
 	"""
 	# Getting the occupations
-	occ_parser = OccupationsParser()
-	occ_pairs = occ_parser.get_sorted_female_occupations(stat_name="bls")
+	occ_pairs = parser.get_sorted_female_occupations(stat_name="bls")
 	# Unzipping list of pairs
 	professions = [pair[0] for pair in occ_pairs]
 	percentages = [pair[1] for pair in occ_pairs]
 
-	# Computing embeddings for the last layer only
-	professions_embeddings = [enc.embed_word(p, layers=[12]) for p in professions]
+	professions_embeddings = [enc.embed_word(p, layers=LAYERS) for p in professions]
 	professions_embeddings = torch.stack(professions_embeddings)
 
-	print(professions_embeddings.size())
+	# Computing embeddings for the different layers
+	for layer in LAYERS:
 
-	# Plotting
-	plotter = EmbeddingsScatterPlotter(professions_embeddings)
-	plotter.labels = professions
-	plotter.colors = percentages
-	plotter.plot_2d_pc()
-	plotter.save(f"{OUTPUT_PATH}/img/all_winogender_occupations_2D.png", timestamp=True)
-	plotter.show()
+		layer_professions_embeddings = professions_embeddings[..., layer, ...]
+		# print(layer_professions_embeddings.size())
+
+		# Plotting
+		plotter = EmbeddingsScatterPlotter(layer_professions_embeddings)
+		plotter.labels = professions
+		plotter.colors = percentages
+		plotter.plot_2d_pc()
+		plotter.save(f"{OUTPUT_PATH}/img/all_winogender_occupations_2D_layer{layer:02d}.png", timestamp=False)
+		# plotter.show()
 	return
 
 
-def plot_divisive_occupations_embeddings_history(enc: WordEncoder) -> None:
+def plot_divisive_occupations_embeddings_history(enc: WordEncoder, parser: OccupationsParser) -> None:
 	"""
 	This function plots a complex graph where the N most female-occupied and male-occupied professions are
 	turned into embeddings and then plotted in a 2D space.
@@ -54,10 +59,9 @@ def plot_divisive_occupations_embeddings_history(enc: WordEncoder) -> None:
 	The female-occupied are magenta, the male-occupied are cyan.
 	"""
 	# Getting the occupations
-	occ_parser = OccupationsParser()
 	occupations_max = 5
-	occ_pairs_f = occ_parser.get_sorted_female_occupations(max_length=occupations_max, female_percentage="highest")
-	occ_pairs_m = occ_parser.get_sorted_female_occupations(max_length=occupations_max, female_percentage="lowest")
+	occ_pairs_f = parser.get_sorted_female_occupations(max_length=occupations_max, female_percentage="highest")
+	occ_pairs_m = parser.get_sorted_female_occupations(max_length=occupations_max, female_percentage="lowest")
 	occ_pairs = [*occ_pairs_f, *occ_pairs_m]
 
 	# Unzipping list of pairs
@@ -74,7 +78,7 @@ def plot_divisive_occupations_embeddings_history(enc: WordEncoder) -> None:
 	plotter.colors = percentages
 	plotter.plot_2d_pc()
 	plotter.save(f"{OUTPUT_PATH}/img/extreme_winogender_occupations_history_2D.png", timestamp=True)
-	plotter.show()
+	# plotter.show()
 	return
 
 
@@ -85,7 +89,8 @@ def launch() -> None:
 	"""
 	# Setup the word encoder with BERT
 	enc = WordEncoder()
+	parser = OccupationsParser()
 
-	plot_occupations_embeddings(enc)
-	plot_divisive_occupations_embeddings_history(enc)
+	plot_occupations_embeddings(enc, parser)
+	plot_divisive_occupations_embeddings_history(enc, parser)
 	return

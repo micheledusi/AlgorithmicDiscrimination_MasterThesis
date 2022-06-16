@@ -21,13 +21,16 @@ class EmbeddingsScatterPlotter:
 	This class stores and visualizes embeddings.
 	It can operate dimensionality reduction to produce 2D and 3D graphs.
 	"""
+
+	DEFAULT_COLORMAP: str = settings.GENDER_CYAN2PINK_COLORMAP_NAME
+
 	__embeddings = None
 	__pca_2d_vectors: Tensor = None
 	__pca_3d_vectors: Tensor = None
 	__labels: [str] = None
 	__colors: [float] = None
 	__sizes: [float] = None
-	__colormap: str = settings.GENDER_CYAN2PINK_COLORMAP_NAME
+	__colormap: str = DEFAULT_COLORMAP
 	__cmap_norm: Normalize = None
 	__ready_to_show: bool = False
 
@@ -116,7 +119,7 @@ class EmbeddingsScatterPlotter:
 		self.labels = None
 		self.colors = None
 		self.sizes = None
-		self.colormap = DEFAULT_COLORMAP
+		self.colormap = self.DEFAULT_COLORMAP
 		self.__cmap_norm = None
 		self.__ready_to_show = False
 
@@ -155,8 +158,10 @@ class EmbeddingsScatterPlotter:
 			self.compute_pca_2d_vectors()
 		# We extract the Xs and Ys of the points
 		coords = self.__pca_2d_vectors.moveaxis(-1, 0)  # Brings the last dimension (the one reduced with PCA) to front
-		coords = coords.detach().numpy()                # Converting into NumPy array
+		coords = coords.detach().numpy()  # Converting into NumPy array
 		xs, ys = coords[0], coords[1]
+
+		plt.figure()
 
 		if len(xs.shape) == 1 and len(ys.shape) == 1:
 			# If there is no history, points are individually visualized with no connections between them
@@ -195,7 +200,7 @@ class EmbeddingsScatterPlotter:
 		if self.__pca_3d_vectors is None:
 			self.compute_pca_3d_vectors()
 		# We extract the Xs, Ys and Zs of the points
-		coords = self.__pca_2d_vectors.moveaxis(-1, 0)     # Brings the last dimension (the one reduced with PCA) to front
+		coords = self.__pca_2d_vectors.moveaxis(-1, 0)  # Brings the last dimension (the one reduced with PCA) to front
 		coords = coords.detach().numpy()
 		x, y, z = coords[0], coords[1], coords[2]
 
