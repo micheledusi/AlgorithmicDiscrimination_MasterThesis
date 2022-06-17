@@ -15,10 +15,15 @@ import sys
 from libs.layerwise_anomaly.src import anomaly_model
 from src.parsers.winogender_parser import get_sentences_pairs
 from src.viewers.plot_heatmap_surprise import PairSurpriseHeatmapsPlotter
+from src.parsers.occupations_parser import OccupationsParser
+import settings
 
+MODEL_SERIALIZED_FILE = settings.FOLDER_SAVED_MODELS + "/anomaly_surprise_model.bin"
+OUTPUT_IMG_FOLDER = settings.FOLDER_RESULTS + "/surprise_analysis/img"
 
-MODEL_SERIALIZED_FILE = "saved/models/anomaly_surprise_model.bin"
-OUTPUT_IMG_FOLDER = "results/surprise_analysis/img"
+VISUALIZED_SENTENCES: int = 20
+TRAINING_BNC_SENTENCES: int = 1000
+PRINTED_TABLE_LAYERS: range = range(0, 13)
 
 
 def load_anomaly_model() -> anomaly_model.AnomalyModel:
@@ -39,20 +44,20 @@ def load_anomaly_model() -> anomaly_model.AnomalyModel:
 		return model
 	else:
 		print('\tLoading BNC (British National Corpus) sentences... ', end="")
-		with open('data/bnc/bnc.pkl', 'rb') as f:
+		with open(settings.FOLDER_DATA + '/bnc/bnc.pkl', 'rb') as f:
 			# Loading sentences from pickle-serialized file
 			# The serialized file has been obtained by running the original script of paper "How is BERT surprised?" on the BNC.
 			bnc_sentences = pickle.load(f)
 			# Randomly extracting N sentences (out of ~22k)
-			random.seed(12345)
-			bnc_sentences = random.sample(bnc_sentences, 10000)
+			random.seed(settings.RANDOM_SEED)
+			bnc_sentences = random.sample(bnc_sentences, TRAINING_BNC_SENTENCES)
 		print("Completed.")
 
 		print('\tTraining model with sentences...', end="")
 		model = anomaly_model.AnomalyModel(
 			bnc_sentences,
-			encoder_name="bert-base-uncased",
-			model_type="gmm",
+			encoder_name=settings.DEFAULT_BERT_MODEL_NAME,
+			model_type=settings.DEFAULT_DISTRIBUTION_MODEL_NAME,
 			n_components=1,
 			covariance_type="full",
 			svm_kernel="rbf",
@@ -67,7 +72,8 @@ def load_anomaly_model() -> anomaly_model.AnomalyModel:
 		return model
 
 
-def analyze_sentences_pairs(model: anomaly_model.AnomalyModel, sentence_pairs: list[tuple[str, str]], output_stream=sys.stdout):
+def analyze_sentences_pairs(model: anomaly_model.AnomalyModel, sentence_pairs: list[tuple[str, str]],
+                            output_stream=sys.stdout, row_ids: list[str] = None):
 	"""
 	The first of two experiments contained in this script.
 	This function analyzes a list of sentences pairs; for each sentence a global surprise is computed.
@@ -79,6 +85,7 @@ def analyze_sentences_pairs(model: anomaly_model.AnomalyModel, sentence_pairs: l
 	:param model: The AnomalyModel used to compute the surprise.
 	:param sentence_pairs: The list of opposite-gender pairs.
 	:param output_stream: The file out-stream where to save results in TSV format.
+	:param row_ids: If present, adds a row_id column
 	:return: None
 	"""
 	# Computing the global surprise for sentences pair
@@ -87,15 +94,42 @@ def analyze_sentences_pairs(model: anomaly_model.AnomalyModel, sentence_pairs: l
 	# 1) associated with a sentence
 	# 2) structured in 13 float, each one is the sentence's global surprise for the corresponding BERT layer
 
-	last_layer = 12
 	# Printing header
-	print("score_male\tsent_male\tscore_female\tsent_female\tdifference", file=output_stream)
-	for (sent_l, sent_r), (scores_l, scores_r) in zip(sentence_pairs, results):
-		last_score_l = scores_l[last_layer]
-		last_score_r = scores_r[last_layer]
-		print(f"{last_score_l}\t{sent_l}", end="\t", file=output_stream)
-		print(f"{last_score_r}\t{sent_r}", end="\t", file=output_stream)
-		print(f"{last_score_l - last_score_r}", file=output_stream)
+	header_list: list[str] = []
+	if row_ids is not None:
+		header_list.append("row_id")
+	for gender in ["m", "f"]:
+		header_list.append(f"sentence_{gender}")
+		for layer in PRINTED_TABLE_LAYERS:
+			header_list.append(f"score_{gender}_{layer:02d}")
+	for layer in PRINTED_TABLE_LAYERS:
+		header_list.append(f"score_diff_{layer:02d}")
+	header: str = settings.OUTPUT_TABLE_COL_SEPARATOR.join(header_list)
+	print(header, file=output_stream)
+
+	# Printing data
+	for i in range(len(results)):
+		data_list: list[str] = []
+		if row_ids is not None:
+			data_list.append(f"{row_ids[i]}")
+		# Extracting current results
+		(sent_m, sent_f) = sentence_pairs[i]
+		(score_m, score_f) = results[i]
+		# Appending male results
+		data_list.append(sent_m)
+		for layer in PRINTED_TABLE_LAYERS:
+			data_list.append(f"{score_m[layer]:.8f}")
+		# Appending female results
+		data_list.append(sent_f)
+		for layer in PRINTED_TABLE_LAYERS:
+			data_list.append(f"{score_f[layer]:.8f}")
+		# Appending differences by layer
+		for layer in PRINTED_TABLE_LAYERS:
+			data_list.append(f"{(score_m[layer] - score_f[layer]):.8f}")
+		# Computing and printing the row string
+		data_str: str = settings.OUTPUT_TABLE_COL_SEPARATOR.join(data_list)
+		print(data_str, file=output_stream)
+
 	return
 
 
@@ -118,7 +152,8 @@ def plot_sentences_pairs(model: anomaly_model.AnomalyModel, chosen_pairs: list[t
 		pair_result = model.compute_sentences_pair_surprise_per_tokens(pair)
 		plotter = PairSurpriseHeatmapsPlotter(pair_result=pair_result)
 		plotter.plot_surprise_heatmaps()
-		plotter.save(f"{OUTPUT_IMG_FOLDER}/pair_surprise_heatmaps_{i}.png", timestamp=True)
+		plotter.save(f"{OUTPUT_IMG_FOLDER}/pair_surprise_heatmaps_{i}.{settings.OUTPUT_IMAGE_FILE_EXTENSION}",
+		             timestamp=False)
 	return
 
 
@@ -129,12 +164,12 @@ def launch() -> None:
 
 	# Reading sentences
 	print("Reading and instantiating sentences from WinoGender dataset...", end="")
-	sentence_pairs = get_sentences_pairs()
+	sentence_pairs: list[tuple[str, str]] = get_sentences_pairs()
 	print("Completed.")
 
 	# [1] #
 	print("Computing and printing results...", end="")
-	nfile: str = "results/surprise_analysis/surprise_result.tsv"
+	nfile: str = settings.FOLDER_RESULTS + "/surprise_analysis/tables/surprise_result." + settings.OUTPUT_TABLE_FILE_EXTENSION
 	outfile = open(nfile, "w")
 	analyze_sentences_pairs(model, sentence_pairs, output_stream=outfile)
 	outfile.close()
@@ -142,8 +177,8 @@ def launch() -> None:
 
 	# [2] #
 	print("Analyzing single sentences...", end="")
-	random.seed(12345)
-	chosen_pairs = random.sample(sentence_pairs, 5)
+	random.seed(settings.RANDOM_SEED)
+	chosen_pairs = random.sample(sentence_pairs, VISUALIZED_SENTENCES)
 	"""chosen_pairs = [
 	 	("He is a doctor", "She is a doctor"),
 	 	("He is a nurse", "She is a nurse"),
@@ -156,6 +191,17 @@ def launch() -> None:
 	 	("The librarian took his job seriously", "The librarian took her job seriously"),
 	]"""
 	plot_sentences_pairs(model, chosen_pairs)
+	print("Completed.")
+
+	# [3] #
+	print("Computing and printing results for WinoGender occupations...", end="")
+	occ_parser = OccupationsParser()
+	tmpl_m, tmpl_f = "he is a %s", "she is a %s"
+	sentence_pairs = [(tmpl_m % occ, tmpl_f % occ) for occ in occ_parser.occupations_list]
+	nfile: str = settings.FOLDER_RESULTS + "/surprise_analysis/tables/occupations_surprise_results." \
+	             + settings.OUTPUT_TABLE_FILE_EXTENSION
+	with open(nfile, "w") as outfile:
+		analyze_sentences_pairs(model, sentence_pairs, output_stream=outfile, row_ids=occ_parser.occupations_list)
 	print("Completed.")
 
 	pass

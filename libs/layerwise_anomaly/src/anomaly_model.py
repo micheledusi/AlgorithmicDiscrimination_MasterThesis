@@ -5,14 +5,15 @@
 # In Proceedings of the 59th Annual Meeting of the Association for Computational Linguistics (ACL).
 ############
 
+
 import sklearn.mixture
 import numpy as np
 from numpy import ndarray
-
 from libs.layerwise_anomaly.src.sentence_encoder import SentenceEncoder
+import settings
 
-DEFAULT_ENCODER_NAME: str = "roberta-base"
-DEFAULT_MODEL_TYPE: str = "gmm"
+
+INCLUDE_SPECIAL_TOKENS: bool = False
 
 
 class AnomalyModel:
@@ -21,8 +22,8 @@ class AnomalyModel:
     """
 
     def __init__(self, train_sentences,
-                 encoder_name: str = DEFAULT_ENCODER_NAME,
-                 model_type: str = DEFAULT_MODEL_TYPE,
+                 encoder_name: str = settings.DEFAULT_BERT_MODEL_NAME,
+                 model_type: str = settings.DEFAULT_DISTRIBUTION_MODEL_NAME,
                  # Parameters for GMM model type:
                  n_components: int = 1,
                  covariance_type='full',
@@ -35,7 +36,7 @@ class AnomalyModel:
         # Assumes base models have 12+1 layers, large models have 24+1
         self.num_encoder_layers = 25 if 'large' in encoder_name else 13
 
-        _, all_vecs = self.enc.contextual_token_vecs(train_sentences)
+        _, all_vecs = self.enc.contextual_token_vecs(train_sentences, special_tokens=INCLUDE_SPECIAL_TOKENS)
         # <all_vecs> is the list of numpy tensor, one for each sentence
         # One sentence => np.array(sentence length, 13, 768)
 
@@ -43,10 +44,10 @@ class AnomalyModel:
             sent_vecs = np.vstack([vs[:, layer, :] for vs in all_vecs])
 
             gmm = None
-            if model_type == 'gmm':
+            if model_type == settings.DISTRIBUTION_GAUSSIAN_MIXTURE_MODEL_NAME:
                 # GMM = Gaussian Mixture Model
                 gmm = sklearn.mixture.GaussianMixture(n_components=n_components, covariance_type=covariance_type)
-            elif model_type == 'svm':
+            elif model_type == settings.DISTRIBUTION_SUPPORT_VECTOR_MACHINE_NAME:
                 # SVM = Support Vector Machine
                 gmm = sklearn.svm.OneClassSVM(kernel=svm_kernel)
 
@@ -64,7 +65,7 @@ class AnomalyModel:
         """
         # Here I did a bad thing: I pass to the encoder a list with a single item, and I take the single item returned.
         # That's because the encoder method works with list, but I'm working on a single sentence here
-        tokens, vecs = self.enc.contextual_token_vecs([sentence])
+        tokens, vecs = self.enc.contextual_token_vecs([sentence], special_tokens=INCLUDE_SPECIAL_TOKENS)
         tokens: list = tokens[0]
         vecs: ndarray = vecs[0]
         assert len(tokens) == vecs.shape[0]
@@ -113,7 +114,7 @@ class AnomalyModel:
             all_scores is List[np.array(#layers, #tokens)]
         """
         # Extracting the tokens from the sentences, already encoded
-        all_tokens, all_vecs = self.enc.contextual_token_vecs(sentences_list)
+        all_tokens, all_vecs = self.enc.contextual_token_vecs(sentences_list, special_tokens=INCLUDE_SPECIAL_TOKENS)
         #   all_tokens  is a List[List[tokens]], one list for each sentence.
         #   all_vecs    is a List[np.array(sentence length, 13, 768)], one array for each sentence.
         all_scores = []

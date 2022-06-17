@@ -5,18 +5,31 @@
 
 # This file contains the settings for the whole project, in a centralized place.
 
-# DETERMINISM
+import torch
 
-# Random seed
+# PYTORCH COMPUTING
+
+# Determinism
 RANDOM_SEED: int = 42
+torch.manual_seed(RANDOM_SEED)
+
+# If available, torch computes on a parallel architecture
+pt_device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # FILES
 
 # Folders structure
 FOLDER_DATA = 'data'
 FOLDER_RESULTS = 'results'
+FOLDER_SAVED = 'saved'
+FOLDER_SAVED_MODELS = FOLDER_SAVED + '/models'
 
 # ENCODING
+
+# Distribution models
+DISTRIBUTION_GAUSSIAN_MIXTURE_MODEL_NAME: str = 'gmm'
+DISTRIBUTION_SUPPORT_VECTOR_MACHINE_NAME: str = 'svm'
+DEFAULT_DISTRIBUTION_MODEL_NAME: str = DISTRIBUTION_GAUSSIAN_MIXTURE_MODEL_NAME
 
 # Model names and parameters
 DEFAULT_BERT_MODEL_NAME: str = 'bert-base-uncased'
