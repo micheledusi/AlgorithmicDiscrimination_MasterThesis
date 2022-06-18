@@ -52,5 +52,6 @@ OUTPUT_TABLE_FILE_EXTENSION: str = 'tsv'
 
 # PyPlot colormaps
 GENDER_CYAN2PINK_COLORMAP_NAME: str = 'cool'
+PALETTE_COLORMAP_NAME: str = 'Set2'
 
 OUTPUT_IMAGE_FILE_EXTENSION: str = 'png'

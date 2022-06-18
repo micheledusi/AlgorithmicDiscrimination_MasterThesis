@@ -71,7 +71,7 @@ templates: dict = {
 SELECTED_LAYERS: range = range(12, 13)
 
 
-def compute_contextual_embedding(encoder: WordEncoder, word: str, layers) -> dict:
+def compute_contextual_embedding(encoder: WordEncoder, word: str, layers) -> dict[str, list[torch.Tensor]]:
 	"""
 	Computes the embedding of a single word.
 	The embedding is a dictionary with the pronouns as keys: "i", "you", "he", "she", "they".
@@ -93,14 +93,14 @@ def compute_contextual_embedding(encoder: WordEncoder, word: str, layers) -> dic
 	return embeddings
 
 
-def compute_contextual_embeddings_list(words: list[str]) -> dict:
+def compute_contextual_embeddings_list(words: list[str]) -> dict[str, dict[str, list[torch.Tensor]]]:
 	"""
 	Computes the list of embeddings for each input word.
 	:param words: The list of words
 	:return: The dictionary associating words and embeddings
 	"""
 	encoder = WordEncoder()
-	embeddings: dict[str, dict] = {}
+	embeddings: dict[str, dict[str, list[torch.Tensor]]] = {}
 	for w in words:
 		word_embeddings = compute_contextual_embedding(encoder, w, SELECTED_LAYERS)
 		embeddings[w] = word_embeddings
@@ -137,7 +137,7 @@ def print_metrics_table(embeddings: dict, embeddings_comparator: EmbeddingsCompa
 			return s
 
 	# Opening and printing file
-	with open(f"{settings.FOLDER_RESULTS}/contextual_difference/metrics_lastlevel.{settings.OUTPUT_TABLE_FILE_EXTENSION}", "w") as f:
+	with open(f"{settings.FOLDER_RESULTS}/contextual_difference/tables/metrics_lastlevel.{settings.OUTPUT_TABLE_FILE_EXTENSION}", "w") as f:
 		header: str = f"word{col_sep}{embeddings_comparator.names_header()}{col_sep}stat_bergsma{col_sep}stat_bls"
 		print(header, file=f)
 		for word, word_embs in embeddings.items():
@@ -201,14 +201,71 @@ def launch() -> None:
 	# Printing the metrics
 	print_metrics_table(embeddings=occs_embs, embeddings_comparator=comparator, occupations_parser=parser)
 
-	"""
 	# Visualizing embeddings
-	plotter = EmbeddingsScatterPlotter(embeddings)
-	plotter.colors = [*([0] * occs_number), *([1] * occs_number)]
-	plotter.labels = [*occ_list_m, *occ_list_f]
-	plotter.plot_2d_pc()
-	plotter.show()
+	"""
+	# For every occupation
+	for occ_word in occs_list:
+		occ_embeddings: dict[str, list[torch.Tensor]] = occs_embs[occ_word]
 
+		occ_embeddings_list: list[torch.Tensor] = []
+		occ_colors = []
+		occ_labels = []
+
+		# For every pronoun
+		for pron_ix, pron_word in enumerate(templates):
+			# We extract the list of embeddings for the templates of the pronoun
+			pron_embeddings: list[torch.Tensor] = occ_embeddings[pron_word]
+			occ_embeddings_list.extend(pron_embeddings)
+			pron_templates = templates[pron_word]
+
+			for tmpl, _ in pron_templates:
+				sentence = tmpl.replace("[CLS]", "").replace("[SEP]", "").strip() % occ_word
+				occ_labels.append(sentence)
+				occ_colors.append(pron_ix)
+		# At the end, we have a list of tensors, a list of labels and a list of colors
+
+		plottable_embeddings = torch.stack(occ_embeddings_list)
+		plotter = EmbeddingsScatterPlotter(plottable_embeddings)
+		plotter.colormap = settings.PALETTE_COLORMAP_NAME
+		plotter.colors = occ_colors
+		plotter.labels = occ_labels
+		torch.manual_seed(settings.RANDOM_SEED)
+		plotter.plot_2d_pc()
+		plotter.save(f"{settings.FOLDER_RESULTS}/contextual_difference/img/"
+		             f"plot_{occ_word}.{settings.OUTPUT_IMAGE_FILE_EXTENSION}")
+		# plotter.show()
+	"""
+
+	# Cumulative plot by pronouns and occupation
+	embs_list: list[torch.Tensor] = []
+	embs_colors = []
+	embs_labels = []
+
+	# For every occupation
+	for occ_word in occs_list:
+		occ_embeddings: dict[str, list[torch.Tensor]] = occs_embs[occ_word]
+
+		# For every pronoun
+		for pron_ix, pron_word in enumerate(templates):
+			# We extract the list of embeddings for the templates of the pronoun
+			pron_embeddings: list[torch.Tensor] = occ_embeddings[pron_word]
+			pron_embeddings: torch.Tensor = torch.mean(torch.stack(pron_embeddings), dim=0)
+			embs_list.append(pron_embeddings)
+			embs_labels.append(pron_word)
+			embs_colors.append(pron_ix)
+
+	plottable_embeddings = torch.stack(embs_list)
+	plotter = EmbeddingsScatterPlotter(plottable_embeddings)
+	plotter.colormap = settings.PALETTE_COLORMAP_NAME
+	plotter.colors = embs_colors
+	# plotter.labels = embs_labels
+	torch.manual_seed(settings.RANDOM_SEED)
+	plotter.plot_2d_pc()
+	plotter.save(f"{settings.FOLDER_RESULTS}/contextual_difference/img/"
+	             f"_plotall.{settings.OUTPUT_IMAGE_FILE_EXTENSION}")
+	# plotter.show()
+
+	"""
 	# Visualizing measures
 	plt.figure()
 	cmap = plt.get_cmap("viridis")

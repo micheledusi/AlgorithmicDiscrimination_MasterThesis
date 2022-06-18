@@ -33,6 +33,7 @@ class EmbeddingsScatterPlotter:
 	__colormap: str = DEFAULT_COLORMAP
 	__cmap_norm: Normalize = None
 	__ready_to_show: bool = False
+	__figure = None
 
 	def __init__(self, embeddings: Tensor = None):
 		self.embeddings = embeddings
@@ -122,6 +123,7 @@ class EmbeddingsScatterPlotter:
 		self.colormap = self.DEFAULT_COLORMAP
 		self.__cmap_norm = None
 		self.__ready_to_show = False
+		self.__figure = None
 
 	def compute_pca_2d_vectors(self) -> Tensor:
 		"""
@@ -161,16 +163,16 @@ class EmbeddingsScatterPlotter:
 		coords = coords.detach().numpy()  # Converting into NumPy array
 		xs, ys = coords[0], coords[1]
 
-		plt.figure()
+		self.__figure, ax = plt.subplots()
 
 		if len(xs.shape) == 1 and len(ys.shape) == 1:
 			# If there is no history, points are individually visualized with no connections between them
-			plt.scatter(xs, ys, c=self.colors, s=self.sizes)
+			ax.scatter(xs, ys, c=self.colors, s=self.sizes)
 
 			# If labels are set, the plot is annotated by points
 			if self.labels is not None:
 				for label, x, y in zip(self.labels, xs, ys):
-					plt.annotate(label, xy=(x, y), xytext=(1, 1), textcoords="offset points")
+					ax.annotate(label, xy=(x, y), xytext=(1, 1), textcoords="offset points", fontsize='small')
 
 		elif len(xs.shape) == 2 and len(ys.shape) == 2:
 			# Every embedding is a history of N points, where N = #layers of encoder (e.g. BERT)
@@ -180,12 +182,12 @@ class EmbeddingsScatterPlotter:
 				layers = len(xh)
 				normalized_col_float = self.__cmap_norm(col_float)
 				color = plt.get_cmap(self.colormap)(normalized_col_float)
-				plt.plot(xh, yh, color="#aaaaaa", alpha=0.1)
-				plt.scatter(xh, yh, color=color, s=range(layers))
+				ax.plot(xh, yh, color="#aaaaaa", alpha=0.1)
+				ax.scatter(xh, yh, color=color, s=range(layers))
 
 				if self.labels is not None:
 					label = self.labels[i]
-					plt.annotate(label, xy=(xh[-1], yh[-1]), xytext=(1, 1), textcoords="offset points")
+					ax.annotate(label, xy=(xh[-1], yh[-1]), xytext=(1, 1), textcoords="offset points")
 
 		# Allowing the visualization
 		self.__ready_to_show = True
@@ -204,7 +206,8 @@ class EmbeddingsScatterPlotter:
 		coords = coords.detach().numpy()
 		x, y, z = coords[0], coords[1], coords[2]
 
-		ax = plt.figure().add_subplot(projection='3d')
+		self.__figure = plt.figure()
+		ax = self.__figure.add_subplot(projection='3d')
 		ax.scatter(x, y, z, c=self.colors, s=self.sizes)
 
 		# If labels are set, the plot is annotated by points
