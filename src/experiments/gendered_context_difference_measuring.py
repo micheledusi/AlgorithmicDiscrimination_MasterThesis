@@ -68,7 +68,7 @@ templates: dict = {
 }
 
 
-SELECTED_LAYERS: range = range(12, 13)
+SELECTED_LAYERS: range = range(0, 13)
 
 
 def compute_contextual_embedding(encoder: WordEncoder, word: str, layers) -> dict[str, list[torch.Tensor]]:
@@ -233,7 +233,6 @@ def launch() -> None:
 	# Computing the embeddings
 	occs_embs: dict = compute_contextual_embeddings_list(occs_list)
 
-	measures = {}
 	comparator = EmbeddingsComparator()
 	# Pair euclidean distance
 	comparator.add_metric(PairEuclideanDistance("he", "she"))
@@ -273,43 +272,38 @@ def launch() -> None:
 	comparator.add_metric(TripleCosineSimilarity("i", "you", "they"))
 
 	# Printing the metrics
-	print_metrics_table(embeddings=occs_embs, embeddings_comparator=comparator, occupations_parser=parser)
+	# print_metrics_table(embeddings=occs_embs, embeddings_comparator=comparator, occupations_parser=parser)
 
 	# Visualizing the points distribution
-	plot_points_distribution(embeddings=occs_embs, occupations_list=occs_list, single_occupation_plots=False)
+	# plot_points_distribution(embeddings=occs_embs, occupations_list=occs_list, single_occupation_plots=False)
 
-	"""
 	# Visualizing measures
-	plt.figure()
+	fig, ax = plt.subplots(figsize=(15, 6), dpi=400)
 	cmap = plt.get_cmap("viridis")
 	norm = Normalize(vmin=0, vmax=100)
 
-	pearson_x, pearson_y = [], []
-	for occ, meas in measures.items():
-		pct_dist: float = meas[0]
-		emb_simi = meas[1].detach().numpy()
-		emb_dist = meas[2].detach().numpy()
-		plotted_measure = emb_simi
+	# 19 = Cos_simil(he, she)
+	metric_ix = 19
+	metric_name = comparator.names_list()[metric_ix]
 
-		pct_color = cmap(norm(pct_dist))
-		plt.plot(selected_layers, plotted_measure, '.-', color=pct_color, label=occ)
+	for word, word_embs in occs_embs.items():
+		measures: list[torch.Tensor] = comparator(word_embs)
 
-		last_point = (selected_layers[-1], plotted_measure[-1])
-		plt.annotate(occ, xy=last_point, xytext=(5, -2), textcoords="offset points")
+		plotted_measure = measures[metric_ix].detach().numpy()
 
-		pearson_x.append(pct_dist)
-		pearson_y.append(plotted_measure[-1])
+		pct_color = cmap(norm(parser.get_percentage(word)))
+		ax.plot(SELECTED_LAYERS, plotted_measure, '.-', color=pct_color, label=word)
 
-	plt.xlabel("layers")
-	plt.ylabel("cosine similarity")
-	plt.title("Similarity between occupations in gender-opposite contexts")
-	plt.show()
+		last_point = (SELECTED_LAYERS[-1], plotted_measure[-1])
+		ax.annotate(word, xy=last_point, xytext=(5, -2), textcoords="offset points")
 
-	# Correlation
-	corr_tensor = torch.stack([torch.Tensor(pearson_x), torch.Tensor(pearson_y)])
-	corr = torch.corrcoef(corr_tensor)[0][1]
-	print("Correlation coefficient between real word disparity and measured cosine similarity: ", corr)
-	"""
+	ax.set_xlabel("layers")
+	ax.set_ylabel(metric_name)
+	ax.set_title("Metric measured between occupations in gender-opposite contexts")
+	plt.savefig(f"{settings.FOLDER_RESULTS}/contextual_difference/img/"
+	            f"storic_{metric_name}.{settings.OUTPUT_IMAGE_FILE_EXTENSION}")
+	# plt.show()
+
 	return
 
 
