@@ -107,6 +107,50 @@ def compute_contextual_embeddings_list(words: list[str]) -> dict:
 	return embeddings
 
 
+def print_metrics_table(embeddings: dict, embeddings_comparator: EmbeddingsComparator,
+                        occupations_parser: OccupationsParser) -> None:
+	"""
+	Prints the table (as a TSV/CSV file) of the computed metrics.
+	:return: None
+	"""
+	# Parameters
+	elem_sep = settings.OUTPUT_TABLE_ARRAY_ELEM_SEPARATOR
+	col_sep = settings.OUTPUT_TABLE_COL_SEPARATOR
+	np.set_printoptions(precision=10)
+
+	# Defining auxiliary function to print tensor
+	def print_tensor_array(t: torch.Tensor) -> str:
+		# Prints a tensor with the desired format.
+		t_np = t.detach().numpy()
+		# If the tensor has two or more dimensions, it's printed in the standard way
+		if len(t_np.shape) > 1:
+			return t_np.__str__()
+		# Else, if the tensor has one dimension and only one element
+		elif t_np.shape[0] == 1:
+			# The single element is printed without brackets
+			return f"{t_np[0]}"
+		# Else, if the tensor has one dimension and two or more elements (or even zero)
+		else:
+			s: str = "["
+			s += elem_sep.join([str(e) for e in t_np])
+			s += "]"
+			return s
+
+	# Opening and printing file
+	with open(f"{settings.FOLDER_RESULTS}/contextual_difference/metrics_lastlevel.{settings.OUTPUT_TABLE_FILE_EXTENSION}", "w") as f:
+		header: str = f"word{col_sep}{embeddings_comparator.names_header()}{col_sep}stat_bergsma{col_sep}stat_bls"
+		print(header, file=f)
+		for word, word_embs in embeddings.items():
+			print(f'Measuring metrics for word "{word}"...', end="")
+			metrics = embeddings_comparator(word_embs)
+			print(word, end=col_sep, file=f)
+			for m in metrics:
+				print(print_tensor_array(m), end=col_sep, file=f)
+			print(f"{occupations_parser.get_percentage(word, stat_name='bergsma')}{col_sep}{occupations_parser.get_percentage(word, stat_name='bls')}", file=f)
+			print("Completed.")
+	return
+
+
 def launch() -> None:
 	# Extracting the list of occupations from WinoGender dataset
 	parser = OccupationsParser()
@@ -154,39 +198,8 @@ def launch() -> None:
 	comparator.add_metric(TripleCosineSimilarity("he", "she", "they"))
 	comparator.add_metric(TripleCosineSimilarity("i", "you", "they"))
 
-	# Computing and writing results
-	elem_sep = settings.OUTPUT_TABLE_ARRAY_ELEM_SEPARATOR
-	col_sep = settings.OUTPUT_TABLE_COL_SEPARATOR
-	np.set_printoptions(precision=10)
-
-	def print_tensor_array(t: torch.Tensor) -> str:
-		# Prints a tensor with the desired format.
-		t_np = t.detach().numpy()
-		# If the tensor has two or more dimensions, it's printed in the standard way
-		if len(t_np.shape) > 1:
-			return t_np.__str__()
-		# Else, if the tensor has one dimension and only one element
-		elif t_np.shape[0] == 1:
-			# The single element is printed without brackets
-			return f"{t_np[0]}"
-		# Else, if the tensor has one dimension and two or more elements (or even zero)
-		else:
-			s: str = "["
-			s += elem_sep.join([str(e) for e in t_np])
-			s += "]"
-			return s
-
-	with open(f"results/contextual_difference/metrics_lastlevel.{settings.OUTPUT_TABLE_FILE_EXTENSION}", "w") as f:
-		header: str = f"word{col_sep}{comparator.names_header()}{col_sep}stat_bergsma{col_sep}stat_bls"
-		print(header, file=f)
-		for word, word_embs in occs_embs.items():
-			print(f'Measuring metrics for word "{word}"...', end="")
-			metrics = comparator(word_embs)
-			print(word, end=col_sep, file=f)
-			for m in metrics:
-				print(print_tensor_array(m), end=col_sep, file=f)
-			print(f"{parser.get_percentage(word, stat_name='bergsma')}{col_sep}{parser.get_percentage(word, stat_name='bls')}", file=f)
-			print("Completed.")
+	# Printing the metrics
+	print_metrics_table(embeddings=occs_embs, embeddings_comparator=comparator, occupations_parser=parser)
 
 	"""
 	# Visualizing embeddings
