@@ -151,6 +151,80 @@ def print_metrics_table(embeddings: dict, embeddings_comparator: EmbeddingsCompa
 	return
 
 
+def plot_points_distribution(embeddings: dict, occupations_list: list[str], single_occupation_plots: bool = False) \
+		-> None:
+	"""
+	Plots the scatter graphs for the embeddings.
+	:param embeddings: The embeddings dictionary
+	:param occupations_list: The list of occupation words
+	:param single_occupation_plots: If True, plots a graph for each occupation
+	:return: None
+	"""
+	if single_occupation_plots:
+		# For every occupation
+		for occ_word in occupations_list:
+			occ_embeddings: dict[str, list[torch.Tensor]] = embeddings[occ_word]
+
+			occ_embeddings_list: list[torch.Tensor] = []
+			occ_colors = []
+			occ_labels = []
+
+			# For every pronoun
+			for pron_ix, pron_word in enumerate(templates):
+				# We extract the list of embeddings for the templates of the pronoun
+				pron_embeddings: list[torch.Tensor] = occ_embeddings[pron_word]
+				occ_embeddings_list.extend(pron_embeddings)
+				pron_templates = templates[pron_word]
+
+				for tmpl, _ in pron_templates:
+					sentence = tmpl.replace("[CLS]", "").replace("[SEP]", "").strip() % occ_word
+					occ_labels.append(sentence)
+					occ_colors.append(pron_ix)
+			# At the end, we have a list of tensors, a list of labels and a list of colors
+
+			plottable_embeddings = torch.stack(occ_embeddings_list)
+			plotter = EmbeddingsScatterPlotter(plottable_embeddings)
+			plotter.colormap = settings.PALETTE_COLORMAP_NAME
+			plotter.colors = occ_colors
+			plotter.labels = occ_labels
+			torch.manual_seed(settings.RANDOM_SEED)
+			plotter.plot_2d_pc()
+			plotter.save(f"{settings.FOLDER_RESULTS}/contextual_difference/img/"
+						 f"plot_{occ_word}.{settings.OUTPUT_IMAGE_FILE_EXTENSION}")
+			# plotter.show()
+	# Endif
+
+	# Cumulative plot by pronouns and occupation
+	embs_list: list[torch.Tensor] = []
+	embs_colors = []
+	embs_labels = []
+
+	# For every occupation
+	for occ_word in occupations_list:
+		occ_embeddings: dict[str, list[torch.Tensor]] = embeddings[occ_word]
+
+		# For every pronoun
+		for pron_ix, pron_word in enumerate(templates):
+			# We extract the list of embeddings for the templates of the pronoun
+			pron_embeddings: list[torch.Tensor] = occ_embeddings[pron_word]
+			pron_embeddings: torch.Tensor = torch.mean(torch.stack(pron_embeddings), dim=0)
+			embs_list.append(pron_embeddings)
+			embs_labels.append(pron_word)
+			embs_colors.append(pron_ix)
+
+	plottable_embeddings = torch.stack(embs_list)
+	plotter = EmbeddingsScatterPlotter(plottable_embeddings)
+	plotter.colormap = settings.PALETTE_COLORMAP_NAME
+	plotter.colors = embs_colors
+	# plotter.labels = embs_labels
+	torch.manual_seed(settings.RANDOM_SEED)
+	plotter.plot_2d_pc()
+	plotter.save(f"{settings.FOLDER_RESULTS}/contextual_difference/img/"
+	             f"_plotall.{settings.OUTPUT_IMAGE_FILE_EXTENSION}")
+	# plotter.show()
+	return
+
+
 def launch() -> None:
 	# Extracting the list of occupations from WinoGender dataset
 	parser = OccupationsParser()
@@ -201,69 +275,8 @@ def launch() -> None:
 	# Printing the metrics
 	print_metrics_table(embeddings=occs_embs, embeddings_comparator=comparator, occupations_parser=parser)
 
-	# Visualizing embeddings
-	"""
-	# For every occupation
-	for occ_word in occs_list:
-		occ_embeddings: dict[str, list[torch.Tensor]] = occs_embs[occ_word]
-
-		occ_embeddings_list: list[torch.Tensor] = []
-		occ_colors = []
-		occ_labels = []
-
-		# For every pronoun
-		for pron_ix, pron_word in enumerate(templates):
-			# We extract the list of embeddings for the templates of the pronoun
-			pron_embeddings: list[torch.Tensor] = occ_embeddings[pron_word]
-			occ_embeddings_list.extend(pron_embeddings)
-			pron_templates = templates[pron_word]
-
-			for tmpl, _ in pron_templates:
-				sentence = tmpl.replace("[CLS]", "").replace("[SEP]", "").strip() % occ_word
-				occ_labels.append(sentence)
-				occ_colors.append(pron_ix)
-		# At the end, we have a list of tensors, a list of labels and a list of colors
-
-		plottable_embeddings = torch.stack(occ_embeddings_list)
-		plotter = EmbeddingsScatterPlotter(plottable_embeddings)
-		plotter.colormap = settings.PALETTE_COLORMAP_NAME
-		plotter.colors = occ_colors
-		plotter.labels = occ_labels
-		torch.manual_seed(settings.RANDOM_SEED)
-		plotter.plot_2d_pc()
-		plotter.save(f"{settings.FOLDER_RESULTS}/contextual_difference/img/"
-		             f"plot_{occ_word}.{settings.OUTPUT_IMAGE_FILE_EXTENSION}")
-		# plotter.show()
-	"""
-
-	# Cumulative plot by pronouns and occupation
-	embs_list: list[torch.Tensor] = []
-	embs_colors = []
-	embs_labels = []
-
-	# For every occupation
-	for occ_word in occs_list:
-		occ_embeddings: dict[str, list[torch.Tensor]] = occs_embs[occ_word]
-
-		# For every pronoun
-		for pron_ix, pron_word in enumerate(templates):
-			# We extract the list of embeddings for the templates of the pronoun
-			pron_embeddings: list[torch.Tensor] = occ_embeddings[pron_word]
-			pron_embeddings: torch.Tensor = torch.mean(torch.stack(pron_embeddings), dim=0)
-			embs_list.append(pron_embeddings)
-			embs_labels.append(pron_word)
-			embs_colors.append(pron_ix)
-
-	plottable_embeddings = torch.stack(embs_list)
-	plotter = EmbeddingsScatterPlotter(plottable_embeddings)
-	plotter.colormap = settings.PALETTE_COLORMAP_NAME
-	plotter.colors = embs_colors
-	# plotter.labels = embs_labels
-	torch.manual_seed(settings.RANDOM_SEED)
-	plotter.plot_2d_pc()
-	plotter.save(f"{settings.FOLDER_RESULTS}/contextual_difference/img/"
-	             f"_plotall.{settings.OUTPUT_IMAGE_FILE_EXTENSION}")
-	# plotter.show()
+	# Visualizing the points distribution
+	plot_points_distribution(embeddings=occs_embs, occupations_list=occs_list, single_occupation_plots=False)
 
 	"""
 	# Visualizing measures
