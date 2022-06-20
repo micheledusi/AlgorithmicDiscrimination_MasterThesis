@@ -5,6 +5,7 @@
 
 # This experiment analyzes the differences in gender prediction with a BERT model
 # based on the job in the sentence.
+
 import matplotlib
 import numpy as np
 from matplotlib import pyplot as plt
@@ -112,18 +113,24 @@ def plot_bars_image(filepath: str, template: str, occupations: list[str],
 	:return: None
 	"""
 	tmpl_targets_ixs = [group_targets.index(t) for t in tmpl_targets]
+	print("Indices of targets: ", tmpl_targets_ixs)
 
-	occ_per_row = 16
+	occ_per_row = 15
 	rows: int = int(np.ceil(len(occupations) / occ_per_row))
-	fig, axs = plt.subplots(nrows=rows, ncols=1, figsize=(10, 7), dpi=150, sharex='all')
+	print("Number of rows: ", rows)
+	fig, axs = plt.subplots(nrows=rows, ncols=1, figsize=(11, 9), dpi=150, sharex='all', sharey='all')
 
-	width = 0.8
-	sub_width = width / len(tmpl_targets_ixs)
+	bars_tot_width = 0.75
+	bar_width = bars_tot_width / len(tmpl_targets_ixs)
 	x = np.arange(occ_per_row)
 
 	for curr_row, ax in enumerate(axs):
+		print("\tCurrent row: ", curr_row)
+
 		# Number of occupations in this subplot (figure row)
-		occ_in_curr_row = occ_per_row if occ_per_row * (curr_row + 1) < len(occupations) else len(occupations) % occ_per_row
+		occ_in_curr_row = occ_per_row if occ_per_row * (curr_row + 1) <= len(occupations) else len(occupations) % occ_per_row
+		print("\tOccupations in current row: ", occ_in_curr_row)
+
 		# Starting index of the occupations
 		occ_start_ix = occ_per_row * curr_row
 		# Indices slice for the occupations
@@ -139,21 +146,22 @@ def plot_bars_image(filepath: str, template: str, occupations: list[str],
 
 		cmap = matplotlib.cm.get_cmap('Set2')
 
-		for j in tmpl_targets_ixs:
+		for j_local_ix, j in enumerate(tmpl_targets_ixs):
 			subplot_row_data = subplot_data[..., j]
 			# print("subplot_row_data.shape: ", subplot_row_data.shape)
-			target_subplot_x = subplot_x + (sub_width * j) - width / 2
+			target_subplot_x = subplot_x + (bar_width * j_local_ix + 1.0 - bars_tot_width)
 			# print("target_subplot_x.shape: ", target_subplot_x.shape)
-			ax.bar(target_subplot_x, subplot_row_data, sub_width, label=group_targets[j], zorder=5, color=cmap(j * 0.125))
+			ax.bar(target_subplot_x, subplot_row_data, bar_width, label=group_targets[j], zorder=5, color=cmap(j))
 
 		for k, occ_label in enumerate(occupations[subplot_occs_ixs]):
-			ax.annotate(occ_label, xy=(k - 0.5, 0.0), xytext=(0, 10), textcoords="offset points",
+			ax.annotate(occ_label, xy=(k, 0.0), xytext=(-5, 10), textcoords="offset points",
 			            rotation=90, fontsize=10, zorder=10)
 		ax.set_ylabel('Scores')
-		ax.tick_params(bottom=False, labelbottom=False)
+		ax.tick_params(bottom=True, labelbottom=False)
+		ax.set_xticks(subplot_x)
 		ax.grid(visible=True, axis='y', zorder=0)
 
-	axs[0].legend(bbox_to_anchor=(0.0, 1.05, 1.0, 0.102), loc='upper center', ncol=len(tmpl_targets),
+	axs[0].legend(bbox_to_anchor=(0.0, 1.2, 1.0, 0.102), loc='upper center', ncol=len(tmpl_targets),
 	              mode="", borderaxespad=0.)
 	fig.suptitle(template)
 	# fig.tight_layout()
