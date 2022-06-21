@@ -8,7 +8,7 @@
 
 import numpy as np
 from transformers import pipeline
-from src.parsers.occupations_parser import OccupationsParser
+from src.parsers.winogender_occupations_parser import OccupationsParser
 from src.models.gender_enum import Gender
 from src.models.templates import Template, TemplatesGroup
 from src.viewers.plot_prediction_bars import plot_image_bars_by_target, plot_image_bars_by_gender

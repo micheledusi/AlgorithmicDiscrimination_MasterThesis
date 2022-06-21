@@ -11,7 +11,7 @@
 import torch
 from src.models.word_encoder import WordEncoder
 from src.viewers.plot_scatter_embeddings import EmbeddingsScatterPlotter
-from src.parsers.occupations_parser import OccupationsParser
+from src.parsers.winogender_occupations_parser import OccupationsParser
 import settings
 
 # Output path

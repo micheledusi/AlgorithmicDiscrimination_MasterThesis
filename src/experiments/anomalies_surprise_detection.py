@@ -13,9 +13,9 @@ import pickle
 import random
 import sys
 from libs.layerwise_anomaly.src import anomaly_model
-from src.parsers.winogender_parser import get_sentences_pairs
+from src.parsers.winogender_templates_parser import get_sentences_pairs
 from src.viewers.plot_heatmap_surprise import PairSurpriseHeatmapsPlotter
-from src.parsers.occupations_parser import OccupationsParser
+from src.parsers.winogender_occupations_parser import OccupationsParser
 import settings
 
 MODEL_SERIALIZED_FILE = settings.FOLDER_SAVED_MODELS + "/anomaly_surprise_model.bin"
