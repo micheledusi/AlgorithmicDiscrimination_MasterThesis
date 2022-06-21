@@ -26,6 +26,21 @@ ALL_OCCUPATIONS: list[str] = read_jobs(JOBS_TITLES_FILE)
 ONEWORD_OCCUPATIONS: list[str] = read_jobs(ONEWORD_JOBS_FILE)
 
 
+AN_PREFIXES: tuple[str, ...] = ('a', 'e', 'i', 'o')
+A_PREFIXES: tuple[str, ...] = ('ow', 'uni')
+
+
+def infer_indefinite_article(job_word: str) -> str:
+	"""
+	Returns the indefinite article for the give noun based on simplistic assumptions.
+	:param job_word: A give noun
+	:return: The corresponding indefinite article ('a'/'an'), based on some assumptions
+	"""
+	if job_word.startswith(AN_PREFIXES) and not job_word.startswith(A_PREFIXES):
+		return 'an'
+	return 'a'
+
+
 if __name__ == '__main__':
 	jobs_list: list[str] = []
 	with open('../../' + JOBS_TITLES_FILE, "r") as f_in:
