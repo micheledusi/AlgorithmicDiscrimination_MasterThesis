@@ -27,8 +27,6 @@ algebraist
 algologist
 aligner
 allergist
-allergist/immunologist
-allergist/md
 aluminizer
 amalgamator
 anaesthesiologist
@@ -36,7 +34,6 @@ analyst
 anchorer
 anchorman
 anesthesiologist
-anesthesiologist/physician
 anesthetist
 angiographer
 anglesmith
@@ -58,7 +55,6 @@ applier
 appliquer
 appraiser
 apprentice
-apprentice/lineman
 approver
 aprn
 aquaculturist
@@ -90,7 +86,6 @@ audiologist
 audiometrist
 audioprosthologist
 auditor
-auditor/quality
 auriculotherapist
 aurist
 author
@@ -109,7 +104,6 @@ backfiller
 backwinder
 baggageman
 baggagemaster
-bagman/woman
 bailiff
 baker
 balancer
@@ -208,7 +202,6 @@ bufferer
 buggyman
 bulker
 bulldogger
-bulldozer/loader/compactor/scraper
 bumboater
 bundler
 burlapper
@@ -244,7 +237,6 @@ cardiologist
 caretaker
 cargoman
 carpenter
-carpenter/labor
 carpenters
 carroter
 caser
@@ -280,7 +272,6 @@ charger
 charrer
 chauffeur
 checker
-checker/stocker
 checkman
 cheesemaker
 chef
@@ -338,7 +329,6 @@ colorer
 colorist
 colorman
 columnist
-columnist/commentator
 combiner
 comedian
 companion
@@ -353,8 +343,6 @@ concessionist
 concierge
 conciliator
 concreter
-conductor/brakeman
-conductor/engineer
 configurator
 consignee
 consolidator
@@ -442,7 +430,6 @@ cytogeneticist
 cytologist
 cytopathologist
 cytotechnologist
-cytotechnologist/histotechnologist
 damascener
 dampener
 dampproofer
@@ -474,11 +461,9 @@ demolitionist
 denitrator
 densitometrist
 dentist
-dentist/owner
 dermatologist
 dermatopathologist
 designer
-designer/writer
 desilverizer
 desolderer
 detacher
@@ -514,7 +499,6 @@ dockmaster
 dockworker
 doffer
 dogger
-dogman/woman
 dollyman
 dominatrix
 doorkeeper
@@ -541,11 +525,8 @@ drencher
 drier
 driftman
 driver
-driver/guide
-driver/merchandiser
 drosser
 drycleaner
-dryerman/woman
 drywaller
 dulser
 dumper
@@ -576,8 +557,6 @@ electrotyper
 embedder
 embroiderer
 emt
-emt/dispatcher
-emt/paramedic
 emts
 enameler
 encapsulator
@@ -586,7 +565,6 @@ endbander
 endocrinologist
 endodontist
 engineer
-engineer/conductor
 engraver
 engrosser
 enologist
@@ -598,7 +576,6 @@ epidemiologist
 eradicator
 ergonomist
 esthetician
-esthetician/owner
 estimator
 ethnoarchaeologist
 ethnographer
@@ -628,7 +605,6 @@ farmhand
 farmworker
 farmworkers
 featherer
-feeder/folder
 feltmaker
 fermenter
 fermentologist
@@ -643,7 +619,6 @@ fireman
 fireperson
 firesetter
 fisher
-fitter/welder
 flagger
 flagman
 flagsetter
@@ -733,7 +708,6 @@ gristmiller
 grizzlyman
 groundhand
 groundman
-groundman/lineman
 groundskeeper
 groundsman
 groutman
@@ -753,14 +727,11 @@ harbormaster
 harnessmaker
 harpooner
 headhunter
-headmaster/mistress
-headwaiter/headwaitress
 headwaitress
 heddler
 heeler
 heliotherapist
 helminthologist
-helper/driver
 hematologist
 hemotherapist
 hemstitcher
@@ -789,11 +760,9 @@ hoseman
 hospitalist
 host
 hostess
-host/hostess
 housecleaner
 housefellow
 housekeeper
-housekeeping/laundry
 housemaid
 houseman
 houseperson
@@ -890,7 +859,6 @@ knotter
 knuckler
 labeler
 laborer
-labor/excavator
 labourers
 lacemaker
 laceworker
@@ -928,10 +896,8 @@ lgsw
 librarian
 licsw
 lidder
-lieutenant/deputy
 lifeguard
 lifter
-lifter/driver
 lighter
 limnologist
 lineman
@@ -958,10 +924,8 @@ locksmith
 lockstitcher
 lofter
 loftsman
-loftsman/woman
 logger
 logistician
-logistics/shipper
 lopper
 lpc
 lpn
@@ -972,7 +936,6 @@ lurer
 lusterer
 lvn
 machinist
-magician/illusionist
 magistrate
 magnetizer
 mailer
@@ -988,7 +951,6 @@ mapper
 marbleizer
 marinator
 marketer
-masseur/masseuse
 massotherapist
 masticator
 matcher
@@ -997,7 +959,6 @@ measurer
 meatcutter
 meatman
 mechanic
-mechanic/welder
 mechanist
 mechanotherapist
 mediator
@@ -1039,7 +1000,6 @@ morphologist
 mortarman
 mosaicist
 moshgiach
-motorman/woman
 mounter
 moveman
 mover
@@ -1095,9 +1055,7 @@ nurseryperson
 nutritionalist
 nutritionist
 nutritionists
-ob/gyn
 obstetrician
-obstetrician/gynecologist
 oceanologist
 ocularist
 oenologist
@@ -1106,7 +1064,6 @@ olericulturist
 oncologist
 opener
 operater
-operations/dispatch
 operator
 ophthalmologist
 optician
@@ -1120,7 +1077,6 @@ ornamenter
 orthodontist
 orthoptist
 orthotist
-orthotist/prosthetist
 osteologist
 ota
 otolaryngologist
@@ -1135,8 +1091,6 @@ overlocker
 overseamer
 overweaver
 owner
-owner/operator
-owner/photographer
 oysterman
 packager
 packer
@@ -1213,15 +1167,11 @@ photographer
 photolithographer
 physiatrist
 physician
-physician/allergy/immunology
-physician/internist
-physician/ophthalmologist
 physiognomist
 physiologist
 phytopathologist
 piccoloist
 picker
-picker/puller
 piecer
 piercer
 piler
@@ -1234,7 +1184,6 @@ pipeman
 pizzamaker
 planisher
 planner
-planner/scheduler
 planogrammer
 plasticator
 platemaker
@@ -1293,8 +1242,6 @@ proofreader
 propagator
 prosthetist
 prosthodontist
-prosthodontist/educator
-prosthodontist/owner
 protohistorian
 prototyper
 protozoologist
@@ -1310,13 +1257,11 @@ psychotherapist
 pta
 publicist
 pulmonologist
-pulmonologist/intensivist
 pulper
 pulverizer
 pumpman
 puncher
 purchaser
-purchasing/receiving
 purler
 puttier
 pyroglazer
@@ -1347,7 +1292,6 @@ rebeamer
 rebrander
 recapper
 receiver
-receiver/laborer
 recenterer
 recep
 reception
@@ -1447,8 +1391,6 @@ rumper
 safemaker
 sailmaker
 sailor
-salesman/owner
-sales/marketing
 saloonkeeper
 salvager
 salvationist
@@ -1469,7 +1411,6 @@ scarfer
 scarrer
 scheduler
 scientist
-scientist/engineer
 scientologist
 scooper
 scorekeeper
@@ -1480,7 +1421,6 @@ scowman
 scrapper
 scratcher
 screedman
-screedman/laborer
 scrummaster
 sde
 sdet
@@ -1520,7 +1460,6 @@ shingler
 shipfitter
 shipmaster
 shipper
-shipper/receiver
 shipsmith
 shipwright
 shirrer
@@ -1620,7 +1559,6 @@ stenotypist
 stereoptician
 stereotyper
 sternman
-steward/stewardess
 stippler
 stna
 stockbroker
@@ -1650,7 +1588,6 @@ subsorter
 superintendent
 supervisor
 surfacer
-surgeon/president
 surveyor
 svp
 swabber
@@ -1672,7 +1609,6 @@ tallier
 tankerman
 tankman
 tapeman
-taper/finisher
 targeteer
 tarper
 tattooer
@@ -1730,7 +1666,6 @@ transcription
 transcriptionist
 transferrer
 translator
-translator/interpreter
 transliterator
 transplanter
 trashman
@@ -1794,7 +1729,6 @@ volcanologist
 vp
 vulcanizer
 waiter
-waiter/waitress
 waitress
 waitstaff
 wallpaperer
@@ -1815,9 +1749,6 @@ weeder
 weighmaster
 weighter
 welder
-welder/fabricator
-welder/fitter
-welder/installer
 wharfmaster
 wheelman
 whipper

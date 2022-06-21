@@ -27,7 +27,7 @@ ONEWORD_OCCUPATIONS: list[str] = read_jobs(ONEWORD_JOBS_FILE)
 
 
 AN_PREFIXES: tuple[str, ...] = ('a', 'e', 'i', 'o')
-A_PREFIXES: tuple[str, ...] = ('ow', 'uni')
+A_PREFIXES: tuple[str, ...] = ('ow', 'uni', 'eu')
 
 
 def infer_indefinite_article(job_word: str) -> str:
@@ -46,7 +46,7 @@ if __name__ == '__main__':
 	with open('../../' + JOBS_TITLES_FILE, "r") as f_in:
 		for job in f_in:
 			job = job.strip()
-			if ' ' not in job:
+			if ' ' not in job and '/' not in job:
 				jobs_list.append(job)
 
 	print("A total number of {} one-word jobs was found in the dataset.".format(len(jobs_list)))
