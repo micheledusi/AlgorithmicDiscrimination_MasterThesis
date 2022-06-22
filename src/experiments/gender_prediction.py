@@ -5,6 +5,7 @@
 
 # This experiment analyzes the differences in gender prediction with a BERT model
 # based on the job in the sentence.
+import typing
 
 import numpy as np
 from transformers import pipeline
@@ -70,19 +71,30 @@ def extract_target_words(templates: dict[str, list[str]]) -> list[str]:
 	return list(targets)
 
 
-def compute_scores(templates_group: TemplatesGroup, occupations: list[str]) -> np.ndarray:
+def compute_scores(model: typing.Any | str, tokenizer: typing.Any | None,
+                   templates_group: TemplatesGroup,
+                   occupations: list[str], occ_token: str = TOKEN_OCC) -> np.ndarray:
 	"""
 	Computes the scores of the "fill-mask" task for the BERT encoder.
+	:param occ_token: The occupation token that will be substituted with the words in the occupation list
+	:param model: The model, either a string or a trained model for ML task.
+	:param tokenizer: The tokenizer corresponding to the model. If the model is a string, this is optional.
 	:param templates_group: The group of templates to analyze. It contains the list of templates to fill and the list
 	of target words to use.
 	:param occupations: The occupations to tune the templates.
 	:return: A numpy array of shape: [# templates, # occupations, # target words]
 	"""
 	# Initializing the model
-	unmasker = pipeline("fill-mask", model=settings.DEFAULT_BERT_MODEL_NAME,
-	                    targets=templates_group.targets,
-	                    top_k=len(templates_group.targets))
-	# Initalizing the result
+	if isinstance(model, str):
+		unmasker = pipeline("fill-mask", model=model,
+		                    targets=templates_group.targets,
+		                    top_k=len(templates_group.targets))
+	else:
+		unmasker = pipeline("fill-mask", model=model,
+		                    tokenizer=tokenizer,
+		                    targets=templates_group.targets,
+		                    top_k=len(templates_group.targets))
+	# Initializing the result
 	scores: np.ndarray = np.zeros(
 		shape=(len(templates_group.templates), len(occupations), len(templates_group.targets)))
 	# For every template
@@ -90,7 +102,7 @@ def compute_scores(templates_group: TemplatesGroup, occupations: list[str]) -> n
 		print("Computing scores for template: ", tmpl.sentence)
 		# For every occupation
 		for j, occ in enumerate(occupations):
-			tmpl_occ = tmpl.sentence.replace(TOKEN_OCC, occ)
+			tmpl_occ = tmpl.sentence.replace(occ_token, occ)
 			results = unmasker(tmpl_occ)
 
 			results_aux: dict = {}
@@ -101,25 +113,38 @@ def compute_scores(templates_group: TemplatesGroup, occupations: list[str]) -> n
 	return scores
 
 
-def print_table_file(filepath: str, template: str, occupations: list[str], group_targets: list[str],
-                     parser: OccupationsParser, data: np.ndarray) -> None:
+def print_table_file(filepath: str, group: TemplatesGroup, occupations: list[str],
+                     parser: OccupationsParser | None, data: np.ndarray) -> None:
+	"""
+	This function prints a table of scores for a template group.
+	:param filepath: The file where to print the table
+	:param group: The templates group
+	:param occupations: The occupations list
+	:param parser: The occupations parser (optional)
+	:param data: The 3D tensor of computed scores: [# template, # occupations, # targets]
+	:return:
+	"""
+	# Opening table file
 	with open(filepath, 'w') as f:
 		print(f'template', end=settings.OUTPUT_TABLE_COL_SEPARATOR, file=f)
 		print(f'occupation', end=settings.OUTPUT_TABLE_COL_SEPARATOR, file=f)
-		for tg in group_targets:
+		for tg in group.targets:
 			print(f'{tg}', end=settings.OUTPUT_TABLE_COL_SEPARATOR, file=f)
-		print(f'stat_bergsma', end=settings.OUTPUT_TABLE_COL_SEPARATOR, file=f)
-		print(f'stat_bls', end=settings.OUTPUT_TABLE_COL_SEPARATOR, file=f)
+		if parser is not None:
+			print(f'stat_bergsma', end=settings.OUTPUT_TABLE_COL_SEPARATOR, file=f)
+			print(f'stat_bls', end=settings.OUTPUT_TABLE_COL_SEPARATOR, file=f)
 		print(file=f)
 
-		for k, occ in enumerate(occupations):
-			print(f'{template}', end=settings.OUTPUT_TABLE_COL_SEPARATOR, file=f)
-			print(f'{occ}', end=settings.OUTPUT_TABLE_COL_SEPARATOR, file=f)
-			for j in range(len(data[k])):
-				print(f'{data[k, j]}', end=settings.OUTPUT_TABLE_COL_SEPARATOR, file=f)
-			print(parser.get_percentage(occ, stat_name='bergsma'), end=settings.OUTPUT_TABLE_COL_SEPARATOR, file=f)
-			print(parser.get_percentage(occ, stat_name='bls'), end=settings.OUTPUT_TABLE_COL_SEPARATOR, file=f)
-			print(file=f)
+		for i, tmpl in enumerate(group.templates):
+			for k, occ in enumerate(occupations):
+				print(f'{tmpl.sentence}', end=settings.OUTPUT_TABLE_COL_SEPARATOR, file=f)
+				print(f'{occ}', end=settings.OUTPUT_TABLE_COL_SEPARATOR, file=f)
+				for j in range(len(data[i, k])):
+					print(f'{data[i, k, j]}', end=settings.OUTPUT_TABLE_COL_SEPARATOR, file=f)
+				if parser is not None:
+					print(parser.get_percentage(occ, stat_name='bergsma'), end=settings.OUTPUT_TABLE_COL_SEPARATOR, file=f)
+					print(parser.get_percentage(occ, stat_name='bls'), end=settings.OUTPUT_TABLE_COL_SEPARATOR, file=f)
+				print(file=f)
 	return
 
 
@@ -138,11 +163,19 @@ def launch() -> None:
 		# Computing scores
 		scores: np.ndarray = compute_scores(templates_group=group, occupations=occs_list)
 
-		for i, tmpl in enumerate(group.templates):
-			data = scores[i]
-			# Data dimensions: [# occupations, # targets]
+		# Printing one table for each template
+		print_table_file(
+			filepath=f'{settings.FOLDER_RESULTS}/gender_prediction/tables/'
+			         f'group_{group.name}_by_targets.{settings.OUTPUT_TABLE_FILE_EXTENSION}',
+			group=group,
+			occupations=occs_list,
+			parser=parser,
+			data=scores,
+		)
 
-			tmpl_targets = tmpl.targets
+		for i, tmpl in enumerate(group.templates):
+			tmpl_scores = scores[i]
+			# Template scores dimensions: [# occupations, # targets]
 
 			# Plotting the bar scores graph for each template
 			plot_image_bars_by_target(
@@ -151,7 +184,7 @@ def launch() -> None:
 				template=tmpl,
 				group=group,
 				occupations=occs_list,
-				data=data,
+				data=tmpl_scores,
 			)
 
 			# Plotting the bar scores graph for each template
@@ -161,18 +194,7 @@ def launch() -> None:
 				template=tmpl,
 				group=group,
 				occupations=occs_list,
-				data=data,
-			)
-
-			# Printing one table for each template
-			print_table_file(
-				filepath=f'{settings.FOLDER_RESULTS}/gender_prediction/tables/'
-				         f'group_{group.name}_by_targets_{i:02d}.{settings.OUTPUT_TABLE_FILE_EXTENSION}',
-				template=tmpl.sentence,
-				occupations=occs_list,
-				group_targets=group.targets,
-				parser=parser,
-				data=data,
+				data=tmpl_scores,
 			)
 
 	return
