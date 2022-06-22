@@ -72,7 +72,7 @@ def launch() -> None:
 	# model_name = "distilbert-base-uncased"
 
 	factory = TrainedModelFactory(model_name=model_name)
-	models: dict[str,] = {
+	models: dict[str, ] = {
 		'base': factory.model_mlm(training_text=None),
 		'fine-tuned': factory.model_mlm(training_text=sentences_sampled)
 	}
@@ -120,3 +120,5 @@ def launch() -> None:
 				occupations=eval_occs_list,
 				data=scores[tmpl_index],
 			)
+
+	return
