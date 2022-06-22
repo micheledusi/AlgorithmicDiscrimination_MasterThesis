@@ -59,3 +59,8 @@ class TemplatesGroup:
 		for template in self.templates:
 			if template.targets is None or len(template.targets) == 0:
 				template.targets = self.__targets
+
+	@property
+	def genders(self) -> list[Gender]:
+		return list(self.targets_by_gender.keys())
+
