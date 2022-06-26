@@ -16,6 +16,8 @@ from src.viewers.plot_prediction_bars import plot_image_bars_by_target, plot_ima
 from settings import TOKEN_MASK
 import settings
 
+
+FOLDER_OUTPUTS: str = settings.FOLDER_RESULTS + '/mlm_gender_prediction'
 TOKEN_OCC = "[OCC]"
 
 
@@ -165,7 +167,7 @@ def launch() -> None:
 
 		# Printing one table for each template
 		print_table_file(
-			filepath=f'{settings.FOLDER_RESULTS}/gender_prediction/tables/'
+			filepath=f'{FOLDER_OUTPUTS}/tables/'
 			         f'group_{group.name}_by_targets.{settings.OUTPUT_TABLE_FILE_EXTENSION}',
 			group=group,
 			occupations=occs_list,
@@ -179,7 +181,7 @@ def launch() -> None:
 
 			# Plotting the bar scores graph for each template
 			plot_image_bars_by_target(
-				filepath=f'{settings.FOLDER_RESULTS}/gender_prediction/img/'
+				filepath=f'{FOLDER_OUTPUTS}/img/'
 				         f'group_{group.name}_by_targets_{i:02d}.{settings.OUTPUT_IMAGE_FILE_EXTENSION}',
 				template=tmpl,
 				group=group,
@@ -189,7 +191,7 @@ def launch() -> None:
 
 			# Plotting the bar scores graph for each template
 			plot_image_bars_by_gender(
-				filepath=f'{settings.FOLDER_RESULTS}/gender_prediction/img/'
+				filepath=f'{FOLDER_OUTPUTS}/img/'
 				         f'group_{group.name}_by_genders_{i:02d}.{settings.OUTPUT_IMAGE_FILE_EXTENSION}',
 				template=tmpl,
 				group=group,

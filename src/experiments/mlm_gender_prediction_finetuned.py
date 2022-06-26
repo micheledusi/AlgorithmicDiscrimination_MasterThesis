@@ -8,7 +8,7 @@
 
 import random
 
-from src.experiments.gender_prediction import compute_scores, print_table_file
+from src.experiments.mlm_gender_prediction import compute_scores, print_table_file
 from src.models.gender_enum import Gender
 from src.models.trained_model_factory import TrainedModelFactory
 from src.parsers.winogender_occupations_parser import OccupationsParser
@@ -17,6 +17,9 @@ from src.models.templates import TemplatesGroup, Template
 from settings import TOKEN_MASK
 import settings
 from src.viewers.plot_prediction_bars import plot_image_bars_by_gender
+
+
+FOLDER_OUTPUTS: str = settings.FOLDER_RESULTS + '/mlm_gender_prediction_ft'
 
 
 def load_templates() -> TemplatesGroup:
@@ -102,7 +105,7 @@ def launch() -> None:
 
 		# Printing one table for each model
 		print_table_file(
-			filepath=f'{settings.FOLDER_RESULTS}/gender_prediction_ft/tables/'
+			filepath=f'{FOLDER_OUTPUTS}/tables/'
 			         f'model_{model_name}.{settings.OUTPUT_TABLE_FILE_EXTENSION}',
 			group=eval_group,
 			occupations=eval_occs_list,
@@ -113,7 +116,7 @@ def launch() -> None:
 		# Plotting graph for every template and model
 		for tmpl_index, tmpl in enumerate(eval_group.templates):
 			plot_image_bars_by_gender(
-				filepath=f'{settings.FOLDER_RESULTS}/gender_prediction_ft/img/'
+				filepath=f'{FOLDER_OUTPUTS}/img/'
 				         f'model_{model_name}_{tmpl_index:02d}.{settings.OUTPUT_IMAGE_FILE_EXTENSION}',
 				template=tmpl,
 				group=eval_group,
