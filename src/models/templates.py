@@ -11,10 +11,12 @@ from src.models.gender_enum import Gender
 class Template:
 	sentence: str
 	targets: list[str] | None
+	target_index: int | None
 
-	def __init__(self, sentence: str, targets: list[str] | None = None):
+	def __init__(self, sentence: str, targets: list[str] | None = None, target_index: int | None = None):
 		self.sentence = sentence
 		self.targets = targets
+		self.target_index = target_index
 
 	def instance_with(self, word: str, mask_token: str = '%s') -> str:
 		return self.sentence.replace(mask_token, word)

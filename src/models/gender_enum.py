@@ -21,3 +21,30 @@ class Gender(IntEnum):
 			Gender.FEMALE: "#ef798a",
 		}
 		return genders_colors[self]
+
+	@property
+	def nom_pronoun(self) -> str:
+		genders_nom_pronouns: dict[Gender, str] = {
+			Gender.NEUTER: "they",
+			Gender.MALE: "he",
+			Gender.FEMALE: "she",
+		}
+		return genders_nom_pronouns[self]
+
+	@property
+	def acc_pronoun(self) -> str:
+		genders_acc_pronouns: dict[Gender, str] = {
+			Gender.NEUTER: "them",
+			Gender.MALE: "him",
+			Gender.FEMALE: "her",
+		}
+		return genders_acc_pronouns[self]
+
+	@property
+	def poss_pronoun(self) -> str:
+		genders_poss_pronouns: dict[Gender, str] = {
+			Gender.NEUTER: "their",
+			Gender.MALE: "his",
+			Gender.FEMALE: "her",
+		}
+		return genders_poss_pronouns[self]
