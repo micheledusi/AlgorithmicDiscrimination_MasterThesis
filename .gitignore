@@ -136,6 +136,8 @@ saved/models/*
 
 # Ignoring certain results
 results/*.xlsx
+results/*/*.xlsx
+results/*/tables/*.xlsx
 results/contextual_difference/tables/*.xlsx
 results/mlm_gender_prediction/tables/*.xlsx
 results/embeddings_space/img/*
