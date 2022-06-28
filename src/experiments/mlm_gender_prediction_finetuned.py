@@ -19,7 +19,10 @@ import settings
 from src.viewers.plot_prediction_bars import plot_image_bars_by_gender
 
 
-FOLDER_OUTPUTS: str = settings.FOLDER_RESULTS + '/mlm_gender_prediction_ft'
+EXPERIMENT_NAME: str = "mlm_gender_prediction_finetuned"
+FOLDER_OUTPUT: str = settings.FOLDER_RESULTS + "/" + EXPERIMENT_NAME
+FOLDER_OUTPUT_IMAGES: str = FOLDER_OUTPUT + "/" + settings.FOLDER_IMAGES
+FOLDER_OUTPUT_TABLES: str = FOLDER_OUTPUT + "/" + settings.FOLDER_TABLES
 
 
 def load_templates() -> TemplatesGroup:
@@ -105,7 +108,7 @@ def launch() -> None:
 
 		# Printing one table for each model
 		print_table_file(
-			filepath=f'{FOLDER_OUTPUTS}/tables/'
+			filepath=f'{FOLDER_OUTPUT_TABLES}/'
 			         f'model_{model_name}.{settings.OUTPUT_TABLE_FILE_EXTENSION}',
 			group=eval_group,
 			occupations=eval_occs_list,
@@ -116,7 +119,7 @@ def launch() -> None:
 		# Plotting graph for every template and model
 		for tmpl_index, tmpl in enumerate(eval_group.templates):
 			plot_image_bars_by_gender(
-				filepath=f'{FOLDER_OUTPUTS}/img/'
+				filepath=f'{FOLDER_OUTPUT_IMAGES}/'
 				         f'model_{model_name}_{tmpl_index:02d}.{settings.OUTPUT_IMAGE_FILE_EXTENSION}',
 				template=tmpl,
 				group=eval_group,

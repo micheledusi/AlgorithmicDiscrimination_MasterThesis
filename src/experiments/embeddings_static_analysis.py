@@ -14,8 +14,13 @@ from src.viewers.plot_scatter_embeddings import EmbeddingsScatterPlotter
 from src.parsers.winogender_occupations_parser import OccupationsParser
 import settings
 
+
 # Output path
-OUTPUT_PATH = settings.FOLDER_RESULTS + "/embeddings_space"
+EXPERIMENT_NAME: str = "embeddings_static_analysis"
+FOLDER_OUTPUT: str = settings.FOLDER_RESULTS + "/" + EXPERIMENT_NAME
+FOLDER_OUTPUT_IMAGES: str = FOLDER_OUTPUT + "/" + settings.FOLDER_IMAGES
+FOLDER_OUTPUT_TABLES: str = FOLDER_OUTPUT + "/" + settings.FOLDER_TABLES
+
 # Considered layers
 LAYERS: range = range(0, 13)
 
@@ -46,7 +51,7 @@ def plot_occupations_embeddings(enc: WordEncoder, parser: OccupationsParser) -> 
 		plotter.labels = professions
 		plotter.colors = percentages
 		plotter.plot_2d_pc()
-		plotter.save(f"{OUTPUT_PATH}/img/all_winogender_occupations_2D_layer{layer:02d}.png", timestamp=False)
+		plotter.save(f"{FOLDER_OUTPUT_IMAGES}/all_winogender_occupations_2D_layer{layer:02d}.png", timestamp=False)
 		# plotter.show()
 	return
 
@@ -77,7 +82,7 @@ def plot_divisive_occupations_embeddings_history(enc: WordEncoder, parser: Occup
 	plotter.labels = professions
 	plotter.colors = percentages
 	plotter.plot_2d_pc()
-	plotter.save(f"{OUTPUT_PATH}/img/extreme_winogender_occupations_history_2D.png", timestamp=True)
+	plotter.save(f"{FOLDER_OUTPUT_IMAGES}/extreme_winogender_occupations_history_2D.png", timestamp=True)
 	# plotter.show()
 	return
 

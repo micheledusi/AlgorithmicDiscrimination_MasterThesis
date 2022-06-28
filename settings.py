@@ -24,6 +24,9 @@ FOLDER_RESULTS = 'results'
 FOLDER_SAVED = 'saved'
 FOLDER_SAVED_MODELS = FOLDER_SAVED + '/models'
 
+FOLDER_TABLES = 'tables'
+FOLDER_IMAGES = 'img'
+
 # ENCODING
 
 # Distribution models

@@ -4,6 +4,7 @@
 #########################################################################
 
 # Using an SVM to predict gender from the embeddings
+
 import math
 import random
 
@@ -18,8 +19,10 @@ from src.parsers.jneidel_occupations_parser import ONEWORD_OCCUPATIONS
 import settings
 
 
-M_CLASS: int = 0
-F_CLASS: int = 1
+EXPERIMENT_NAME: str = "embeddings_gender_classification"
+FOLDER_OUTPUT: str = settings.FOLDER_RESULTS + "/" + EXPERIMENT_NAME
+FOLDER_OUTPUT_IMAGES: str = FOLDER_OUTPUT + "/" + settings.FOLDER_IMAGES
+FOLDER_OUTPUT_TABLES: str = FOLDER_OUTPUT + "/" + settings.FOLDER_TABLES
 
 genders: list[Gender] = [
 	Gender.MALE,
@@ -228,7 +231,7 @@ def launch_linear_svc_with_split_dataset(occupations: list[str]) -> None:
 		m_emb = m_embed(occ)
 		f_emb = f_embed(occ)
 		train_xs.extend([m_emb, f_emb])
-		train_ys.extend([M_CLASS, F_CLASS])
+		train_ys.extend([Gender.MALE, Gender.FEMALE])
 
 	classifier = svm.LinearSVC()
 	classifier.fit(train_xs, train_ys)
@@ -243,7 +246,7 @@ def launch_linear_svc_with_split_dataset(occupations: list[str]) -> None:
 		m_emb = m_embed(occ)
 		f_emb = f_embed(occ)
 		eval_xs.extend([m_emb, f_emb])
-		eval_ys.extend([M_CLASS, F_CLASS])
+		eval_ys.extend([Gender.MALE, Gender.FEMALE])
 		predicted_occs.extend(["[M] " + occ, "[F] " + occ])
 
 	predicted_y = classifier.predict(eval_xs)

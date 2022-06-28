@@ -17,8 +17,12 @@ from settings import TOKEN_MASK
 import settings
 
 
-FOLDER_OUTPUTS: str = settings.FOLDER_RESULTS + '/mlm_gender_prediction'
-TOKEN_OCC = "[OCC]"
+EXPERIMENT_NAME: str = "mlm_gender_prediction"
+FOLDER_OUTPUT: str = settings.FOLDER_RESULTS + "/" + EXPERIMENT_NAME
+FOLDER_OUTPUT_IMAGES: str = FOLDER_OUTPUT + "/" + settings.FOLDER_IMAGES
+FOLDER_OUTPUT_TABLES: str = FOLDER_OUTPUT + "/" + settings.FOLDER_TABLES
+
+TOKEN_OCC: str = "[OCC]"
 
 
 template_group_pronouns = TemplatesGroup("pronouns")
@@ -167,7 +171,7 @@ def launch() -> None:
 
 		# Printing one table for each template
 		print_table_file(
-			filepath=f'{FOLDER_OUTPUTS}/tables/'
+			filepath=f'{FOLDER_OUTPUT_TABLES}/'
 			         f'group_{group.name}_by_targets.{settings.OUTPUT_TABLE_FILE_EXTENSION}',
 			group=group,
 			occupations=occs_list,
@@ -181,7 +185,7 @@ def launch() -> None:
 
 			# Plotting the bar scores graph for each template
 			plot_image_bars_by_target(
-				filepath=f'{FOLDER_OUTPUTS}/img/'
+				filepath=f'{FOLDER_OUTPUT_IMAGES}/'
 				         f'group_{group.name}_by_targets_{i:02d}.{settings.OUTPUT_IMAGE_FILE_EXTENSION}',
 				template=tmpl,
 				group=group,
@@ -191,7 +195,7 @@ def launch() -> None:
 
 			# Plotting the bar scores graph for each template
 			plot_image_bars_by_gender(
-				filepath=f'{FOLDER_OUTPUTS}/img/'
+				filepath=f'{FOLDER_OUTPUT_IMAGES}/'
 				         f'group_{group.name}_by_genders_{i:02d}.{settings.OUTPUT_IMAGE_FILE_EXTENSION}',
 				template=tmpl,
 				group=group,

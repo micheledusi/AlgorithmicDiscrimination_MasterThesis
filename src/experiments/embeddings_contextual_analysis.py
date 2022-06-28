@@ -14,6 +14,11 @@ from matplotlib.colors import Normalize
 import settings
 
 
+EXPERIMENT_NAME: str = "embeddings_contextual_analysis"
+FOLDER_OUTPUT: str = settings.FOLDER_RESULTS + "/" + EXPERIMENT_NAME
+FOLDER_OUTPUT_IMAGES: str = FOLDER_OUTPUT + "/" + settings.FOLDER_IMAGES
+FOLDER_OUTPUT_TABLES: str = FOLDER_OUTPUT + "/" + settings.FOLDER_TABLES
+
 templates_i: list[tuple[str, int]] = [
 	("[CLS] i am a %s [SEP]", 4),
 	("[CLS] i worked as a %s [SEP]", 5),
@@ -137,7 +142,7 @@ def print_metrics_table(embeddings: dict, embeddings_comparator: EmbeddingsCompa
 			return s
 
 	# Opening and printing file
-	with open(f"{settings.FOLDER_RESULTS}/contextual_difference/tables/metrics_lastlevel.{settings.OUTPUT_TABLE_FILE_EXTENSION}", "w") as f:
+	with open(f"{FOLDER_OUTPUT_TABLES}/metrics_lastlevel.{settings.OUTPUT_TABLE_FILE_EXTENSION}", "w") as f:
 		header: str = f"word{col_sep}{embeddings_comparator.names_header()}{col_sep}stat_bergsma{col_sep}stat_bls"
 		print(header, file=f)
 		for word, word_embs in embeddings.items():
@@ -189,8 +194,7 @@ def plot_points_distribution(embeddings: dict, occupations_list: list[str], sing
 			plotter.labels = occ_labels
 			torch.manual_seed(settings.RANDOM_SEED)
 			plotter.plot_2d_pc()
-			plotter.save(f"{settings.FOLDER_RESULTS}/contextual_difference/img/"
-						 f"plot_{occ_word}.{settings.OUTPUT_IMAGE_FILE_EXTENSION}")
+			plotter.save(f"{FOLDER_OUTPUT_IMAGES}/plot_{occ_word}.{settings.OUTPUT_IMAGE_FILE_EXTENSION}")
 			# plotter.show()
 	# Endif
 
@@ -219,8 +223,7 @@ def plot_points_distribution(embeddings: dict, occupations_list: list[str], sing
 	# plotter.labels = embs_labels
 	torch.manual_seed(settings.RANDOM_SEED)
 	plotter.plot_2d_pc()
-	plotter.save(f"{settings.FOLDER_RESULTS}/contextual_difference/img/"
-	             f"_plotall.{settings.OUTPUT_IMAGE_FILE_EXTENSION}")
+	plotter.save(f"{FOLDER_OUTPUT_IMAGES}/plotall.{settings.OUTPUT_IMAGE_FILE_EXTENSION}")
 	# plotter.show()
 	return
 
@@ -300,8 +303,7 @@ def launch() -> None:
 	ax.set_xlabel("layers")
 	ax.set_ylabel(metric_name)
 	ax.set_title("Metric measured between occupations in gender-opposite contexts")
-	plt.savefig(f"{settings.FOLDER_RESULTS}/contextual_difference/img/"
-	            f"storic_{metric_name}.{settings.OUTPUT_IMAGE_FILE_EXTENSION}")
+	plt.savefig(f"{FOLDER_OUTPUT_IMAGES}/storic_{metric_name}.{settings.OUTPUT_IMAGE_FILE_EXTENSION}")
 	# plt.show()
 
 	return

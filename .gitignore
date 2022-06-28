@@ -138,8 +138,5 @@ saved/models/*
 results/*.xlsx
 results/*/*.xlsx
 results/*/tables/*.xlsx
-results/contextual_difference/tables/*.xlsx
-results/mlm_gender_prediction/tables/*.xlsx
-results/embeddings_space/img/*
-results/surprise_analysis/tables/*.xlsx
-results/contextual_difference/img/plot*.png
+results/embeddings_static_analysis/img/*
+results/embeddings_contextual_analysis/img/plot*.png

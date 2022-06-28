@@ -3,7 +3,7 @@
 # Algorithmic Discrimination and Natural Language Processing Techniques #
 #########################################################################
 
-# This experiment is inspired by the paper "How is BERT surpised?".
+# This experiment is inspired by the paper "How is BERT surprised?".
 # It aims to detect differences in likelihood of tokens between gender-declined paris of sentences.
 # The un-likelihood of tokens is called "surprise". The average surprise of a sentence tokens is the sentence surprise.
 
@@ -18,8 +18,11 @@ from src.viewers.plot_heatmap_surprise import PairSurpriseHeatmapsPlotter
 from src.parsers.winogender_occupations_parser import OccupationsParser
 import settings
 
-MODEL_SERIALIZED_FILE = settings.FOLDER_SAVED_MODELS + "/anomaly_surprise_model.bin"
-OUTPUT_IMG_FOLDER = settings.FOLDER_RESULTS + "/surprise_analysis/img"
+EXPERIMENT_NAME: str = "anomaly_detection_surprise"
+FOLDER_OUTPUT: str = settings.FOLDER_RESULTS + "/" + EXPERIMENT_NAME
+FOLDER_OUTPUT_IMAGES: str = FOLDER_OUTPUT + "/" + settings.FOLDER_IMAGES
+FOLDER_OUTPUT_TABLES: str = FOLDER_OUTPUT + "/" + settings.FOLDER_TABLES
+MODEL_SERIALIZED_FILE: str = settings.FOLDER_SAVED_MODELS + "/anomaly_surprise_model.bin"
 
 VISUALIZED_SENTENCES: int = 20
 TRAINING_BNC_SENTENCES: int = 1000
@@ -152,7 +155,7 @@ def plot_sentences_pairs(model: anomaly_model.AnomalyModel, chosen_pairs: list[t
 		pair_result = model.compute_sentences_pair_surprise_per_tokens(pair)
 		plotter = PairSurpriseHeatmapsPlotter(pair_result=pair_result)
 		plotter.plot_surprise_heatmaps()
-		plotter.save(f"{OUTPUT_IMG_FOLDER}/pair_surprise_heatmaps_{i}.{settings.OUTPUT_IMAGE_FILE_EXTENSION}",
+		plotter.save(f"{FOLDER_OUTPUT_IMAGES}/pair_surprise_heatmaps_{i}.{settings.OUTPUT_IMAGE_FILE_EXTENSION}",
 		             timestamp=False)
 	return
 
@@ -169,7 +172,7 @@ def launch() -> None:
 
 	# [1] #
 	print("Computing and printing results...", end="")
-	nfile: str = settings.FOLDER_RESULTS + "/surprise_analysis/tables/surprise_result." + settings.OUTPUT_TABLE_FILE_EXTENSION
+	nfile: str = FOLDER_OUTPUT_TABLES + "/surprise_result." + settings.OUTPUT_TABLE_FILE_EXTENSION
 	outfile = open(nfile, "w")
 	analyze_sentences_pairs(model, sentence_pairs, output_stream=outfile)
 	outfile.close()
@@ -198,8 +201,7 @@ def launch() -> None:
 	occ_parser = OccupationsParser()
 	tmpl_m, tmpl_f = "he is a %s", "she is a %s"
 	sentence_pairs = [(tmpl_m % occ, tmpl_f % occ) for occ in occ_parser.occupations_list]
-	nfile: str = settings.FOLDER_RESULTS + "/surprise_analysis/tables/occupations_surprise_results." \
-	             + settings.OUTPUT_TABLE_FILE_EXTENSION
+	nfile: str = FOLDER_OUTPUT_TABLES + "/occupations_surprise_results." + settings.OUTPUT_TABLE_FILE_EXTENSION
 	with open(nfile, "w") as outfile:
 		analyze_sentences_pairs(model, sentence_pairs, output_stream=outfile, row_ids=occ_parser.occupations_list)
 	print("Completed.")

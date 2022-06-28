@@ -15,9 +15,13 @@ import settings
 from src.models.gender_enum import Gender
 from src.models.gender_subspace_model import GenderSubspaceModel
 from src.models.word_encoder import WordEncoder
-from src.parsers.winogender_occupations_parser import OccupationsParser
 from src.parsers.jneidel_occupations_parser import ONEWORD_OCCUPATIONS
 
+
+EXPERIMENT_NAME: str = "embeddings_gender_subspace_detection"
+FOLDER_OUTPUT: str = settings.FOLDER_RESULTS + "/" + EXPERIMENT_NAME
+FOLDER_OUTPUT_IMAGES: str = FOLDER_OUTPUT + "/" + settings.FOLDER_IMAGES
+FOLDER_OUTPUT_TABLES: str = FOLDER_OUTPUT + "/" + settings.FOLDER_TABLES
 
 gendered_words: dict[Gender, list[str]] = {
 	Gender.MALE: ["he", "him", "his", "male", "boy", "man", "father", "dad", "daddy", "sir", "king", "masculinity",
@@ -29,9 +33,16 @@ gendered_words: dict[Gender, list[str]] = {
 LAYERS: range = range(13)
 
 
-def detect_gender_direction(encoder: WordEncoder):
+def detect_gender_direction(encoder: WordEncoder) -> None:
+	"""
+	In this experiment we detect the gender direction with a Linear Support Vector Classifier.
+	The gender direction is the orthogonal direction to the hyperplane that best divides the considered two genders.
+	The hyperplane coefficients are the ones of the trained LinearSVC.
+	:param encoder: the encoding model.
+	:return: None
+	"""
 
-	# target_words: list[str] = OccupationsParser().occupations_list
+	# The words we want to analyze
 	target_words: list[str] = ONEWORD_OCCUPATIONS
 
 	train_x: list[np.ndarray] = []
@@ -57,7 +68,7 @@ def detect_gender_direction(encoder: WordEncoder):
 	predicted_gender = subspace_model.predict(embeddings=np.asarray(eval_x))
 	projected_gender = subspace_model.project(embeddings=np.asarray(eval_x))
 
-	with open(f"{settings.FOLDER_RESULTS}/gender_subspace_detection/tables/occupations_static_spectrum.tsv", "w") as f:
+	with open(f"{FOLDER_OUTPUT_TABLES}/occupations_static_spectrum.{settings.OUTPUT_TABLE_FILE_EXTENSION}", "w") as f:
 		# Printing the header
 		header_list: list[str] = ["word"]
 		header_list.extend([f"pred_gender_{layer:02d}" for layer in range(subspace_model.num_layers)])
