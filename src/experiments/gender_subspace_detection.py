@@ -8,25 +8,64 @@
 # Please notice that this is not how BERT should be used, but that's done only to obtain a single deterministic
 # embedding for a given word / token.
 
+import numpy as np
 import torch
+from sklearn import svm
+
+import settings
+from src.models.gender_enum import Gender
 from src.models.word_encoder import WordEncoder
+from src.parsers.winogender_occupations_parser import OccupationsParser
+
+gendered_words: dict[Gender, list[str]] = {
+	Gender.MALE: ["he", "him", "his", "male", "boy", "man", "father", "dad", "daddy", "sir", "king"],
+	Gender.FEMALE: ["she", "her", "female", "girl", "woman", "mother", "mom", "mommy", "madam", "queen"],
+}
+
+LAYER: int = 12
 
 
-def detect_gender_direction(enc: WordEncoder):
-	w_he = "he"
-	w_she = "she"
+def detect_gender_direction(encoder: WordEncoder):
+
+	target_words: list[str] = OccupationsParser().occupations_list
+
+	train_x: list[np.ndarray] = []
+	train_y: list[Gender] = []
+	eval_x: list[np.ndarray] = []
 
 	with torch.no_grad():
-		emb_he = enc.embed_word(w_he, layers=[0])
-		emb_she = enc.embed_word(w_she, layers=[0])
+		for gend, words in gendered_words.items():
+			for w in words:
+				embedding = encoder.embed_word_merged(w, layers=[LAYER]).detach().numpy()[0]
+				train_x.append(embedding)
+				train_y.append(gend)
+		for tw in target_words:
+			embedding = encoder.embed_word_merged(tw, layers=[LAYER]).detach().numpy()[0]
+			eval_x.append(embedding)
 
-	cos_fun = torch.nn.CosineSimilarity(dim=0, eps=1e-08)
-	similarity = cos_fun(emb_he, emb_she)
+	print("Training Dataset   - length: ", len(train_x))
+	print("Evaluation Dataset - length: ", len(eval_x))
 
-	print("Cosine similarity between <he> and <she>: ", similarity)
+	print("Training Support Vector Classifier...", end='')
+	classifier = svm.LinearSVC()
+	classifier.fit(train_x, train_y)
+	print("Completed.")
 
-	gender_direction = emb_he - emb_she
-	print("Single embedding size: ", gender_direction.size())
+	print("Predicting target words...", end='')
+	predicted_y = classifier.predict(eval_x)
+	coefficients = classifier.coef_[0]
+	print("Completed.")
+
+	print("Results:")
+	with open(f"{settings.FOLDER_RESULTS}/gender_subspace_detection/tables/occupations_static_spectrum.tsv", "w") as f:
+		print(settings.OUTPUT_TABLE_COL_SEPARATOR.join(["word", "gender", "gender_name", "gender_projection"]), file=f)
+		for x, y, tw in zip(eval_x, predicted_y, target_words):
+			spectrum = np.dot(x, coefficients)
+			print(f"{tw:20s}: {Gender(y).name:6s} : {spectrum}")
+			print(tw, end=settings.OUTPUT_TABLE_COL_SEPARATOR, file=f)
+			print(Gender(y), end=settings.OUTPUT_TABLE_COL_SEPARATOR, file=f)
+			print(Gender(y).name, end=settings.OUTPUT_TABLE_COL_SEPARATOR, file=f)
+			print(spectrum, file=f)
 
 
 def launch() -> None:

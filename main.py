@@ -14,10 +14,10 @@ from src.experiments import embeddings_gender_classification
 
 if __name__ == '__main__':
     # embeddings_spatial_analysis.launch()
-    # gender_subspace_detection.launch()
+    gender_subspace_detection.launch()
     # anomalies_surprise_detection.launch()
     # gendered_context_difference_measuring.launch()
     # mlm_gender_prediction.launch()
     # mlm_gender_prediction_finetuned.launch()
-    embeddings_gender_classification.launch()
+    # embeddings_gender_classification.launch()
     pass

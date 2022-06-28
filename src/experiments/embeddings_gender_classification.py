@@ -179,6 +179,14 @@ def launch_linear_svc_with_random_general_dataset(occupations: list[str]) -> Non
 	print(f"Accuracy:                   {100 - len(test_errors) / len(test_dataset) * 100:4.2f} %")
 	for row in test_errors:
 		print(f"Error (expected: {row['gender']}, predicted: {row['predicted_gender']}) in sentence \"{row['sentence']}\"")
+
+	print("Analyzing the classifier coefficients.")
+	print(f"Coefficients shape: {classifier.coef_.shape}")
+	coefficients = classifier.coef_[0]      # Coefficients is now a 1D-ndarray of length (768)
+	sample = test_dataset["embedding"][0]
+	res = np.dot(coefficients, sample)
+	print(f"Sentence: \"{test_dataset['sentence'][0]}\" - Score: {res}")
+
 	return
 
 
