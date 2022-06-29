@@ -140,3 +140,4 @@ results/*/*.xlsx
 results/*/tables/*.xlsx
 results/embeddings_static_analysis/img/*
 results/embeddings_contextual_analysis/img/plot*.png
+results/training/*

@@ -6,12 +6,13 @@
 # This class provides a centralized interface for model training
 # It's specialized for getting the same base model with different fine-tuning
 
+from typing import Any
 
 import pandas as pd
 import transformers
 from datasets import DatasetDict, Dataset
-from transformers import AutoTokenizer, AutoModelForMaskedLM, DataCollatorForLanguageModeling, TrainingArguments, Trainer
-
+from transformers import AutoTokenizer, AutoModelForMaskedLM, DataCollatorForLanguageModeling
+from transformers import TrainingArguments, Trainer
 import settings
 
 
@@ -19,7 +20,7 @@ class TrainedModelFactory:
 
 	test_size: float = 0.2
 	mask_probability = 0.15
-	chunk_size: int = 128
+	chunk_size: int = 32
 	batched: bool = True
 	num_proc: int = 4
 
@@ -37,19 +38,33 @@ class TrainedModelFactory:
 	def tokenizer(self):
 		return self.__tokenizer
 
-	def model_mlm(self, training_text: list[str] | None = None):
+	def model_mlm(self, training_text: list[str] = None, load_or_save_path: str = None):
 		"""
 		Returns a model for Masked Language Modeling (MLM).
 		The model is the "basic" pre-trained model, if no training text is given, or a trained one.
 		:param training_text: The texts on which the model should be trained
+		:param load_or_save_path: The path of the saved model, to save or to load
 		:return: The model
 		"""
+		if load_or_save_path is not None:
+			try:
+				model = AutoModelForMaskedLM.from_pretrained(load_or_save_path, local_files_only=True)
+				print(f"Model found in '{load_or_save_path}'")
+				return model
+			except IOError:
+				print(f"Cannot find model in \"{load_or_save_path}\" - Method will train a model from scratch")
+
 		model = AutoModelForMaskedLM.from_pretrained(self.model_name)
-		# If there are no training data, the pre-trained model is returned
-		if training_text is None:
-			return model
-		# Else, the model is trained on the training_text
-		model = self.train_model_mlm_on_texts(model, texts=training_text)
+		model.to(settings.pt_device)
+
+		# If there are training data, the model is trained on the training_text
+		if training_text is not None:
+			model = self.train_model_mlm_on_texts(model, texts=training_text)
+		# At the end, if there's a path, the model is saved
+		if load_or_save_path is not None:
+			model.save_pretrained(load_or_save_path)
+			print(f"Model saved to '{load_or_save_path}'")
+
 		return model
 
 	def train_model_mlm_on_texts(self, model, texts: list[str],
@@ -75,7 +90,7 @@ class TrainedModelFactory:
 			weight_decay=0.01,
 			push_to_hub=False,
 		)
-		trainer = Trainer(
+		trainer = ModelForMaskedLMTrainer(
 			model=model,
 			args=training_args,
 			train_dataset=lm_dataset['train'],
@@ -90,17 +105,10 @@ class TrainedModelFactory:
 		:return: The function that tokenizes dataset
 		"""
 		def tokenize_function(records):
-			# Concatenates the texts list
-			inputs = ' '.join(records[self.__text_feature_name])
-			# Tokenizing the text input
-			result = self.tokenizer(inputs)
-			if self.tokenizer.is_fast:
-				# Word IDs is a list of optional integers, indicating to which original word the token belonged.
-				# If we have six tokens ['[CLS]', 'I', 'eat', 'las', '##agna', '[SEP]']
-				# For the original sentence: "I eat lasagna."
-				# Which has three words: {0: 'I', 1: 'eat', 2: 'lasagna'}
-				# The word-_ids vector will be: [None, 0, 1, 2, 2, None]
-				result["word_ids"] = result.word_ids(0)
+			result = self.tokenizer(records[self.__text_feature_name],
+			                        padding='max_length',
+			                        truncation=True,
+			                        max_length=16)
 			return result
 
 		return tokenize_function
@@ -110,9 +118,9 @@ class TrainedModelFactory:
 		:return: The function that divides dataset in chunks.
 		"""
 		def group_texts(examples):
-			# concatenated_examples = {k: sum(examples[k], []) for k in examples.keys()}
-			# They're already concatenated
-			concatenated_examples = examples
+			concatenated_examples = {k: sum(examples[k], []) for k in examples.keys()}
+			# If they're already concatenated, use this:
+			# concatenated_examples = examples
 
 			total_length = len(concatenated_examples[list(examples.keys())[0]])
 			# We drop the last chunk if it's smaller than chunk_size
@@ -154,3 +162,31 @@ class TrainedModelFactory:
 		return lm_dataset
 
 
+class ModelForMaskedLMTrainer(Trainer):
+	"""
+	A specific trainer for MLM BERT.
+	The loss functions evaluates the difference between male and female gender.
+	"""
+
+	def __init__(self, *args: TrainingArguments | None, **kwargs: Any | None) -> None:
+		super().__init__(*args, **kwargs)
+
+	def compute_loss(self, model: Any, inputs, return_outputs: bool = False):
+		# From here, we copy the parent method:
+		if self.label_smoother is not None and "labels" in inputs:
+			labels = inputs.pop("labels")
+		else:
+			labels = None
+
+		outputs = model(**inputs)
+		# Save past state if it exists
+		if self.args.past_index >= 0:
+			super._past = outputs[self.args.past_index]
+
+		if labels is not None:
+			loss = self.label_smoother(outputs, labels)
+		else:
+			# We don't use .loss here since the model may return tuples instead of ModelOutput.
+			loss = outputs["loss"] if isinstance(outputs, dict) else outputs[0]
+
+		return (loss, outputs) if return_outputs else loss

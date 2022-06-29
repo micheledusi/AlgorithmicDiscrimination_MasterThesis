@@ -5,10 +5,14 @@
 
 # This experiment analyzes the differences in gender prediction with a BERT model
 # based on the job in the sentence.
+
+
 import typing
 
 import numpy as np
+import torch
 from transformers import pipeline
+
 from src.parsers.winogender_occupations_parser import OccupationsParser
 from src.models.gender_enum import Gender
 from src.models.templates import Template, TemplatesGroup
@@ -94,12 +98,15 @@ def compute_scores(model: typing.Any | str, tokenizer: typing.Any | None,
 	if isinstance(model, str):
 		unmasker = pipeline("fill-mask", model=model,
 		                    targets=templates_group.targets,
-		                    top_k=len(templates_group.targets))
+		                    top_k=len(templates_group.targets),
+		                    device=0)   # TODO: Automatize the device choice. For now, ID "0" is the CUDA GPU.
 	else:
 		unmasker = pipeline("fill-mask", model=model,
 		                    tokenizer=tokenizer,
 		                    targets=templates_group.targets,
-		                    top_k=len(templates_group.targets))
+		                    top_k=len(templates_group.targets),
+		                    device=0)   # TODO: Automatize the device choice. For now, ID "0" is the CUDA GPU.
+
 	# Initializing the result
 	scores: np.ndarray = np.zeros(
 		shape=(len(templates_group.templates), len(occupations), len(templates_group.targets)))

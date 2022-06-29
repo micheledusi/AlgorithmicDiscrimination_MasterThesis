@@ -71,16 +71,17 @@ def launch() -> None:
 
 	# Sampling a subset of sentences
 	random.seed(settings.RANDOM_SEED)
-	sentences_sampled = random.sample(sentences, 5000)
+	sentences_sampled = random.sample(sentences, 10000)
 
 	# Chosen model
 	model_name = settings.DEFAULT_BERT_MODEL_NAME
 	# model_name = "distilbert-base-uncased"
+	saved_model_ft_path = settings.FOLDER_SAVED_MODELS + f"/mlm_gender_prediction_{model_name}_{len(sentences_sampled)}"
 
 	factory = TrainedModelFactory(model_name=model_name)
 	models: dict[str, ] = {
 		'base': factory.model_mlm(training_text=None),
-		'fine-tuned': factory.model_mlm(training_text=sentences_sampled)
+		'fine-tuned': factory.model_mlm(training_text=sentences_sampled, load_or_save_path=saved_model_ft_path)
 	}
 
 	# Eval
