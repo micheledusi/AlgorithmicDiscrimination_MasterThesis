@@ -16,7 +16,7 @@ from transformers import pipeline
 from src.parsers.winogender_occupations_parser import OccupationsParser
 from src.models.gender_enum import Gender
 from src.models.templates import Template, TemplatesGroup
-from src.viewers.plot_prediction_bars import plot_image_bars_by_target, plot_image_bars_by_gender
+from src.viewers.plot_prediction_bars import plot_image_bars_by_target, plot_image_bars_by_gender_by_template
 from settings import TOKEN_MASK
 import settings
 
@@ -99,13 +99,13 @@ def compute_scores(model: typing.Any | str, tokenizer: typing.Any | None,
 		unmasker = pipeline("fill-mask", model=model,
 		                    targets=templates_group.targets,
 		                    top_k=len(templates_group.targets),
-		                    device=0)   # TODO: Automatize the device choice. For now, ID "0" is the CUDA GPU.
+		                    device=0)
 	else:
 		unmasker = pipeline("fill-mask", model=model,
 		                    tokenizer=tokenizer,
 		                    targets=templates_group.targets,
 		                    top_k=len(templates_group.targets),
-		                    device=0)   # TODO: Automatize the device choice. For now, ID "0" is the CUDA GPU.
+		                    device=0)
 
 	# Initializing the result
 	scores: np.ndarray = np.zeros(
@@ -201,7 +201,7 @@ def launch() -> None:
 			)
 
 			# Plotting the bar scores graph for each template
-			plot_image_bars_by_gender(
+			plot_image_bars_by_gender_by_template(
 				filepath=f'{FOLDER_OUTPUT_IMAGES}/'
 				         f'group_{group.name}_by_genders_{i:02d}.{settings.OUTPUT_IMAGE_FILE_EXTENSION}',
 				template=tmpl,

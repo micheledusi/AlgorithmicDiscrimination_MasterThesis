@@ -8,6 +8,8 @@
 
 import random
 
+import numpy as np
+
 from src.experiments.mlm_gender_prediction import compute_scores, print_table_file
 from src.models.gender_enum import Gender
 from src.models.trained_model_factory import TrainedModelFactory
@@ -16,8 +18,7 @@ from src.parsers.jneidel_occupations_parser import ONEWORD_OCCUPATIONS, infer_in
 from src.models.templates import TemplatesGroup, Template
 from settings import TOKEN_MASK
 import settings
-from src.viewers.plot_prediction_bars import plot_image_bars_by_gender
-
+from src.viewers.plot_prediction_bars import plot_image_bars_by_gender_by_template, plot_image_bars_by_gender
 
 EXPERIMENT_NAME: str = "mlm_gender_prediction_finetuned"
 FOLDER_OUTPUT: str = settings.FOLDER_RESULTS + "/" + EXPERIMENT_NAME
@@ -77,7 +78,7 @@ def launch() -> None:
 	# model_name = "distilbert-base-uncased"
 
 	factory = TrainedModelFactory(model_name=model_name)
-	training_samples = [500, 20000]
+	training_samples: list[int] = [500, 1000, 2000, 5000, 10000, 20000]
 	models: dict[str, ] = {'base': factory.model_mlm(training_text=None)}
 	for samples_number in training_samples:
 		sentences_sampled = random.sample(sentences, samples_number)
@@ -105,29 +106,39 @@ def launch() -> None:
 	eval_artoccs_list = list(map(lambda occ: infer_indefinite_article(occ) + ' ' + occ, eval_occs_list))
 
 	# Computing scores for every model
+	scores_by_model: dict[str, np.ndarray] = {}
 	for model_name, model in models.items():
 		scores = compute_scores(model=model, tokenizer=factory.tokenizer,
 		                        templates_group=eval_group, occupations=eval_artoccs_list, occ_token=occupation_token)
 
-		# Printing one table for each model
-		print_table_file(
-			filepath=f'{FOLDER_OUTPUT_TABLES}/'
-			         f'model_{model_name}.{settings.OUTPUT_TABLE_FILE_EXTENSION}',
+		# Grouping scores by occupations by averaging the results for different templates
+		scores_grouped_by_occupations = np.mean(scores, axis=0)
+		# Saving the grouped scores for the model into the main scores array
+		scores_by_model[model_name] = scores_grouped_by_occupations
+
+		"""
+		# Plotting graph for the model
+		plot_image_bars_by_gender(
+			filepath=f'{FOLDER_OUTPUT_IMAGES}/'
+			         f'model_{model_name}_all.{settings.OUTPUT_IMAGE_FILE_EXTENSION}',
 			group=eval_group,
 			occupations=eval_occs_list,
-			parser=None,
-			data=scores,
-		)
+			data=scores_grouped_by_occupations,
+			title=f"Results of model " + model_name,
+		)"""
 
-		# Plotting graph for every template and model
-		for tmpl_index, tmpl in enumerate(eval_group.templates):
-			plot_image_bars_by_gender(
-				filepath=f'{FOLDER_OUTPUT_IMAGES}/'
-				         f'model_{model_name}_{tmpl_index:02d}.{settings.OUTPUT_IMAGE_FILE_EXTENSION}',
-				template=tmpl,
-				group=eval_group,
-				occupations=eval_occs_list,
-				data=scores[tmpl_index],
-			)
+	# Printing one table for each model
+	print("Writing table on file...")
+	with open(f'{FOLDER_OUTPUT_TABLES}/predictions_models-compared.{settings.OUTPUT_TABLE_FILE_EXTENSION}', 'w') as f:
+		header: list[str] = ['model', 'occupation']
+		header.extend(eval_group.targets)
+		print(settings.OUTPUT_TABLE_COL_SEPARATOR.join(header), file=f)
 
+		for model_name in models.keys():
+			scores = scores_by_model[model_name]
+			for j, occ in enumerate(eval_occs_list):
+				row: list[str] = [model_name, occ]
+				row.extend([str(score) for score in scores[j]])
+				print(settings.OUTPUT_TABLE_COL_SEPARATOR.join(row), file=f)
+	print("Completed.")
 	return

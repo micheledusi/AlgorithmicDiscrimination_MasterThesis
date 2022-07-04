@@ -76,18 +76,21 @@ def plot_image_bars_by_target(filepath: str, template: Template, group: Template
 	return
 
 
-def plot_image_bars_by_gender(filepath: str, template: Template, group: TemplatesGroup,
-                              occupations: list[str], data: np.ndarray) -> None:
+def plot_image_bars_by_gender(filepath: str, group: TemplatesGroup, occupations: list[str], data: np.ndarray,
+                              title: str = None) -> None:
 	"""
 	Plots and saves an image graph representing the prediction values from the gender prediction task.
 	The bars will be indicated by occupations. There will be a set of bars for each gender in the group.
+	:param title: The title of the plot.
 	:param filepath: The filepath where to save the image.
-	:param template: The template to plot
 	:param group: The group of templates it belongs to
 	:param occupations: The list of occupations to plot
-	:param data: The result data to visualize
+	:param data: The result data to visualize, of dimensions: [# occupations, # target]. In this case, we don't distinguish
+	the template.
 	:return: None
 	"""
+	assert len(data.shape) == 2
+
 	# Current data dimensions: [# occupations, # targets]
 	# We want to reduce it to [# occupations, # genders] by merging slices on axis=1
 	data_by_gender = np.zeros(shape=(len(occupations), len(group.targets_by_gender)))
@@ -115,8 +118,6 @@ def plot_image_bars_by_gender(filepath: str, template: Template, group: Template
 	x = np.arange(occ_per_row)
 
 	for curr_row, ax in enumerate(axs):
-		# print("\tCurrent row: ", curr_row)
-
 		# Number of occupations in this subplot (figure row)
 		occ_in_curr_row = occ_per_row if occ_per_row * (curr_row + 1) <= len(occupations) \
 			else len(occupations) % occ_per_row
@@ -148,8 +149,23 @@ def plot_image_bars_by_gender(filepath: str, template: Template, group: Template
 
 	axs[0].legend(bbox_to_anchor=(0.0, 1.2, 1.0, 0.05), loc='upper center', ncol=len(group.targets_by_gender),
 	              mode="", borderaxespad=0.)
-	fig.suptitle(template.sentence)
+	fig.suptitle(title)
 	fig.tight_layout()
 	plt.savefig(filepath)
 	# plt.show()
 	return
+
+
+def plot_image_bars_by_gender_by_template(filepath: str, template: Template, group: TemplatesGroup,
+                                          occupations: list[str], data: np.ndarray) -> None:
+	"""
+	Plots and saves an image graph representing the prediction values from the gender prediction task.
+	The bars will be indicated by occupations. There will be a set of bars for each gender in the group.
+	:param filepath: The filepath where to save the image.
+	:param template: The template to plot
+	:param group: The group of templates it belongs to
+	:param occupations: The list of occupations to plot
+	:param data: The result data to visualize
+	:return: None
+	"""
+	return plot_image_bars_by_gender(filepath, group, occupations, data, title=template.sentence)
