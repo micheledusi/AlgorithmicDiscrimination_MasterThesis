@@ -71,18 +71,19 @@ def launch() -> None:
 
 	# Sampling a subset of sentences
 	random.seed(settings.RANDOM_SEED)
-	sentences_sampled = random.sample(sentences, 10000)
 
 	# Chosen model
 	model_name = settings.DEFAULT_BERT_MODEL_NAME
 	# model_name = "distilbert-base-uncased"
-	saved_model_ft_path = settings.FOLDER_SAVED_MODELS + f"/mlm_gender_prediction_{model_name}_{len(sentences_sampled)}"
 
 	factory = TrainedModelFactory(model_name=model_name)
-	models: dict[str, ] = {
-		'base': factory.model_mlm(training_text=None),
-		'fine-tuned': factory.model_mlm(training_text=sentences_sampled, load_or_save_path=saved_model_ft_path)
-	}
+	training_samples = [500, 20000]
+	models: dict[str, ] = {'base': factory.model_mlm(training_text=None)}
+	for samples_number in training_samples:
+		sentences_sampled = random.sample(sentences, samples_number)
+		saved_model_ft_path = settings.FOLDER_SAVED_MODELS + f"/mlm_gender_prediction_{model_name}_{samples_number}"
+		models[f'fine-tuned-{samples_number}'] = factory.model_mlm(training_text=sentences_sampled,
+		                                                           load_or_save_path=saved_model_ft_path)
 
 	# Eval
 	occupation_token = '$ART_ACC'
@@ -90,8 +91,9 @@ def launch() -> None:
 	eval_group.templates = [
 		Template(f"{TOKEN_MASK} has a job as {occupation_token}."),
 		Template(f"In the past, {TOKEN_MASK} has worked as {occupation_token}."),
-		Template(f"{TOKEN_MASK} works as {occupation_token}."),
+		Template(f"{TOKEN_MASK} is working as {occupation_token}."),
 		Template(f"{TOKEN_MASK} has been hired as {occupation_token}."),
+		Template(f"{TOKEN_MASK} has been trained as {occupation_token}."),
 		Template(f"{TOKEN_MASK} will become {occupation_token} after the studies."),
 	]
 	eval_group.targets = ['he', 'she']
