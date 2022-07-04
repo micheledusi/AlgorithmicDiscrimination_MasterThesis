@@ -7,7 +7,7 @@
 # To allow deterministic comparison between embeddings, the context is standardized.
 # Please notice that this is not how BERT should be used, but that's done only to obtain a single deterministic
 # embedding for a given word / token.
-
+import matplotlib.pyplot as plt
 import numpy as np
 import torch
 
@@ -17,20 +17,58 @@ from src.models.gender_subspace_model import GenderSubspaceModel
 from src.models.word_encoder import WordEncoder
 from src.parsers.jneidel_occupations_parser import ONEWORD_OCCUPATIONS
 
-
 EXPERIMENT_NAME: str = "embeddings_gender_subspace_detection"
 FOLDER_OUTPUT: str = settings.FOLDER_RESULTS + "/" + EXPERIMENT_NAME
 FOLDER_OUTPUT_IMAGES: str = FOLDER_OUTPUT + "/" + settings.FOLDER_IMAGES
 FOLDER_OUTPUT_TABLES: str = FOLDER_OUTPUT + "/" + settings.FOLDER_TABLES
 
 gendered_words: dict[Gender, list[str]] = {
-	Gender.MALE: ["he", "him", "his", "male", "boy", "man", "father", "dad", "daddy", "sir", "king", "masculinity",
-	              "lord", "uncle", "grandpa", "grandfather", "husband"],
-	Gender.FEMALE: ["she", "her", "female", "girl", "woman", "mother", "mom", "mommy", "madam", "queen", "femininity",
-	                "lady", "aunt", "grandma", "grandmother", "wife"],
+	Gender.MALE: ["he", "him", "his",
+	              "man", "male", "boy", "masculinity", "masculine",
+	              "husband", "father", "dad", "daddy", "uncle", "grandpa", "grandfather",
+	              "brother", "son", "nephew",
+	              "sir", "king", "lord", "prince", "master",
+	              ],
+	Gender.FEMALE: ["she", "her", "her",
+	                "woman", "female", "girl", "femininity", "feminine",
+	                "wife", "mother", "mom", "mommy", "aunt", "grandma", "grandmother",
+	                "sister", "daughter", "niece",
+	                "madam", "queen", "lady", "princess", "mistress",
+	                ],
+}
+
+gendered_animal_words: dict[Gender, list[str]] = {
+	# Gender.NEUTER: ["rabbit", "horse", "sheep", "pig", "chicken", "duck", "cattle", "goose", "fox", "tiger", "lion", ],
+	Gender.MALE: ["buck", "stallion", "raw", "boar", "rooster", "drake", "bull", "gander", "fox", "tiger", "lion", ],
+	Gender.FEMALE: ["doe", "mare", "ewe", "sow", "hen", "duck", "cow", "goose", "vixen", "tigress", "lioness", ],
 }
 
 LAYERS: range = range(13)
+
+
+def validate_model(model: GenderSubspaceModel, validation_x: list[np.ndarray], validation_y: list[Gender]) -> None:
+	predicted_valid_y = model.predict(embeddings=np.asarray(validation_x))
+	errors_per_layer = np.zeros(shape=model.num_layers, dtype=np.uint8)
+	for vy, pys in zip(validation_y, predicted_valid_y):
+		errors_per_layer += [vy != py for py in pys]
+	accuracy_per_layer = np.ones(shape=errors_per_layer.shape) - errors_per_layer / len(validation_y)
+	print(f"Errors:     ", errors_per_layer)
+	for l, acc in enumerate(accuracy_per_layer):
+		print(f"Layer {l:02d}: acc = {acc:6.4%}")
+
+
+def plot_maximum_components(model: GenderSubspaceModel) -> None:
+	coefs: np.ndarray = np.abs(model.coefficients)
+	coefs_indices = np.argsort(-np.abs(coefs), axis=-1)
+	max_coefs_indices = coefs_indices[..., :20]
+	fig, axs = plt.subplots(nrows=coefs.shape[0], ncols=1, sharex='all', sharey='all')
+	for layer in range(model.num_layers):
+		markerline, stemline, baseline, = axs[layer].stem(max_coefs_indices[layer], coefs[layer, max_coefs_indices[layer]])
+		plt.setp(markerline, markersize=1.0)
+		plt.setp(stemline, linewidth=1.0)
+		plt.setp(baseline, linewidth=0.5, color='k')
+	# plt.tight_layout()
+	plt.show()
 
 
 def detect_gender_direction(encoder: WordEncoder) -> None:
@@ -47,24 +85,42 @@ def detect_gender_direction(encoder: WordEncoder) -> None:
 
 	train_x: list[np.ndarray] = []
 	train_y: list[Gender] = []
+	valid_x: list[np.ndarray] = []
+	valid_y: list[Gender] = []
 	eval_x: list[np.ndarray] = []
 
 	with torch.no_grad():
+		# Training set - used to train the model
 		for gend, words in gendered_words.items():
 			for w in words:
 				embedding = encoder.embed_word_merged(w, layers=LAYERS).detach().numpy()
 				train_x.append(embedding)
 				train_y.append(gend)
+		# Validation set - we know the labels, so we can test the model
+		for gend, words in gendered_animal_words.items():
+			for w in words:
+				embedding = encoder.embed_word_merged(w, layers=LAYERS).detach().numpy()
+				valid_x.append(embedding)
+				valid_y.append(gend)
+		# Evaluation set - the experiment set, we don't know the labels
 		for tw in target_words:
 			embedding = encoder.embed_word_merged(tw, layers=LAYERS).detach().numpy()
 			eval_x.append(embedding)
 
 	print("Training Dataset   - length: ", len(train_x))
+	print("Validation Dataset - length: ", len(valid_x))
 	print("Evaluation Dataset - length: ", len(eval_x))
 
 	# Training the gender subspace division model
 	subspace_model = GenderSubspaceModel(embeddings=np.asarray(train_x), genders=train_y)
 
+	# Validation
+	# validate_model(model=subspace_model, validation_x=valid_x, validation_y=valid_y)
+
+	# Analyze components
+	plot_maximum_components(subspace_model)
+
+	# Evaluation
 	predicted_gender = subspace_model.predict(embeddings=np.asarray(eval_x))
 	projected_gender = subspace_model.project(embeddings=np.asarray(eval_x))
 

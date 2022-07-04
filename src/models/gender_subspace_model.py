@@ -12,14 +12,12 @@ from enum import IntEnum
 import numpy as np
 from sklearn import svm
 
-from src.models.gender_enum import Gender
-
 
 class GenderSubspaceModel:
 	__classifiers: list[svm.LinearSVC] = []
 	__num_features: int
 
-	def __init__(self, embeddings: np.ndarray, genders: list[IntEnum] | list[int]) -> None:
+	def __init__(self, embeddings: np.ndarray, genders: list[IntEnum] | list[int], print_summary: bool = False) -> None:
 		"""
 		Creates and train the hyperplane that separates genders.
 		:param embeddings: A 3D matrix of embeddings: [# samples, # layers = 13, # features = 768]
@@ -27,19 +25,24 @@ class GenderSubspaceModel:
 		"""
 		num_samples, num_layers, self.__num_features = embeddings.shape
 		assert num_samples == len(genders)
-		print("Training samples: ", num_samples)
-		print("Number of layers: ", num_layers)
-		print("Number of features: ", self.__num_features)
+		if print_summary:
+			print("Training samples: ", num_samples)
+			print("Number of layers: ", num_layers)
+			print("Number of features: ", self.__num_features)
 
 		# Training a classifier for each layer
 		for layer in range(num_layers):
-			clf = svm.LinearSVC()
+			clf = svm.LinearSVC(dual=False)
 			clf.fit(embeddings[:, layer], genders)
 			self.__classifiers.append(clf)
 
 	@property
 	def num_layers(self) -> int:
 		return len(self.__classifiers)
+
+	@property
+	def coefficients(self) -> np.ndarray:
+		return np.asarray([clf.coef_[0] for clf in self.__classifiers])
 
 	def predict(self, embeddings: np.ndarray) -> np.ndarray:
 		predictions = np.zeros(shape=(len(embeddings), self.num_layers), dtype=np.uint8)
