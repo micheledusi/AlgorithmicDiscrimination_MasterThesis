@@ -57,18 +57,32 @@ def validate_model(model: GenderSubspaceModel, validation_x: list[np.ndarray], v
 		print(f"Layer {l:02d}: acc = {acc:6.4%}")
 
 
-def plot_maximum_components(model: GenderSubspaceModel) -> None:
+def plot_maximum_components(model: GenderSubspaceModel, highlights: int = 10) -> None:
 	coefs: np.ndarray = np.abs(model.coefficients)
 	coefs_indices = np.argsort(-np.abs(coefs), axis=-1)
-	max_coefs_indices = coefs_indices[..., :20]
-	fig, axs = plt.subplots(nrows=coefs.shape[0], ncols=1, sharex='all', sharey='all')
+	fig, axs = plt.subplots(nrows=coefs.shape[0], ncols=1, sharex='all', sharey='all',
+	                        figsize=(18, 20), dpi=100, constrained_layout=True)
+
 	for layer in range(model.num_layers):
-		markerline, stemline, baseline, = axs[layer].stem(max_coefs_indices[layer], coefs[layer, max_coefs_indices[layer]])
-		plt.setp(markerline, markersize=1.0)
-		plt.setp(stemline, linewidth=1.0)
+		max_coefs_indices = coefs_indices[layer, :highlights]
+		min_coefs_indices = coefs_indices[layer, highlights:]
+		# MIN
+		markerline, stemline, baseline, = axs[layer].stem(min_coefs_indices, coefs[layer, min_coefs_indices])
+		plt.setp(markerline, markersize=0.5, color='#CCC')
+		plt.setp(stemline, linewidth=1.0, color='#CCC')
 		plt.setp(baseline, linewidth=0.5, color='k')
-	# plt.tight_layout()
+		# MAX
+		markerline, stemline, baseline, = axs[layer].stem(max_coefs_indices, coefs[layer, max_coefs_indices])
+		plt.setp(markerline, markersize=1.0, color="red")
+		plt.setp(stemline, linewidth=1.0, color="red")
+		plt.setp(baseline, linewidth=0.5, color='k')
+		# Annotations
+		for idx in max_coefs_indices[:2]:
+			axs[layer].annotate(f"{idx}: {coefs[layer, idx]:.3f}", xy=(idx, coefs[layer, idx]), xytext=(1, 0), textcoords="offset points", fontsize=8, zorder=10)
+
+	plt.savefig(FOLDER_OUTPUT_IMAGES + f"/coefficients_plot.{settings.OUTPUT_IMAGE_FILE_EXTENSION}")
 	plt.show()
+	return
 
 
 def detect_gender_direction(encoder: WordEncoder) -> None:
