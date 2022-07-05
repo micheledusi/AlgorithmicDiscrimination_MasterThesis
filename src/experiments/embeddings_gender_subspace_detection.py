@@ -16,6 +16,7 @@ from src.models.gender_enum import Gender
 from src.models.gender_subspace_model import GenderSubspaceModel
 from src.models.word_encoder import WordEncoder
 from src.parsers.jneidel_occupations_parser import ONEWORD_OCCUPATIONS
+from src.viewers.plot_gender_subspace import GenderSubspacePlotter
 
 EXPERIMENT_NAME: str = "embeddings_gender_subspace_detection"
 FOLDER_OUTPUT: str = settings.FOLDER_RESULTS + "/" + EXPERIMENT_NAME
@@ -55,34 +56,6 @@ def validate_model(model: GenderSubspaceModel, validation_x: list[np.ndarray], v
 	print(f"Errors:     ", errors_per_layer)
 	for l, acc in enumerate(accuracy_per_layer):
 		print(f"Layer {l:02d}: acc = {acc:6.4%}")
-
-
-def plot_maximum_components(model: GenderSubspaceModel, highlights: int = 10) -> None:
-	coefs: np.ndarray = np.abs(model.coefficients)
-	coefs_indices = np.argsort(-np.abs(coefs), axis=-1)
-	fig, axs = plt.subplots(nrows=coefs.shape[0], ncols=1, sharex='all', sharey='all',
-	                        figsize=(18, 20), dpi=100, constrained_layout=True)
-
-	for layer in range(model.num_layers):
-		max_coefs_indices = coefs_indices[layer, :highlights]
-		min_coefs_indices = coefs_indices[layer, highlights:]
-		# MIN
-		markerline, stemline, baseline, = axs[layer].stem(min_coefs_indices, coefs[layer, min_coefs_indices])
-		plt.setp(markerline, markersize=0.5, color='#CCC')
-		plt.setp(stemline, linewidth=1.0, color='#CCC')
-		plt.setp(baseline, linewidth=0.5, color='k')
-		# MAX
-		markerline, stemline, baseline, = axs[layer].stem(max_coefs_indices, coefs[layer, max_coefs_indices])
-		plt.setp(markerline, markersize=1.0, color="red")
-		plt.setp(stemline, linewidth=1.0, color="red")
-		plt.setp(baseline, linewidth=0.5, color='k')
-		# Annotations
-		for idx in max_coefs_indices[:2]:
-			axs[layer].annotate(f"{idx}: {coefs[layer, idx]:.3f}", xy=(idx, coefs[layer, idx]), xytext=(1, 0), textcoords="offset points", fontsize=8, zorder=10)
-
-	plt.savefig(FOLDER_OUTPUT_IMAGES + f"/coefficients_plot.{settings.OUTPUT_IMAGE_FILE_EXTENSION}")
-	plt.show()
-	return
 
 
 def detect_gender_direction(encoder: WordEncoder) -> None:
@@ -132,7 +105,11 @@ def detect_gender_direction(encoder: WordEncoder) -> None:
 	# validate_model(model=subspace_model, validation_x=valid_x, validation_y=valid_y)
 
 	# Analyze components
-	plot_maximum_components(subspace_model)
+	subspace_plotter: GenderSubspacePlotter = GenderSubspacePlotter(subspace_model)
+	subspace_plotter.plot_maximum_coefficients(
+		savepath=FOLDER_OUTPUT_IMAGES + f"/coefficients_plot.{settings.OUTPUT_IMAGE_FILE_EXTENSION}")
+	subspace_plotter.plot_2d_gendered_scatter_embeddings(embeddings=np.asarray(eval_x),
+	                                                     savepath=FOLDER_OUTPUT_IMAGES + f"/scatter_subspace.{settings.OUTPUT_IMAGE_FILE_EXTENSION}")
 
 	# Evaluation
 	predicted_gender = subspace_model.predict(embeddings=np.asarray(eval_x))

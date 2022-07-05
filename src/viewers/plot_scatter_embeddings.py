@@ -22,7 +22,7 @@ class EmbeddingsScatterPlotter:
 	It can operate dimensionality reduction to produce 2D and 3D graphs.
 	"""
 
-	DEFAULT_COLORMAP: str = settings.GENDER_CYAN2PINK_COLORMAP_NAME
+	DEFAULT_COLORMAP: str = settings.COLORMAP_NAME_GENDER_CYAN2PINK
 
 	__embeddings = None
 	__pca_2d_vectors: Tensor = None

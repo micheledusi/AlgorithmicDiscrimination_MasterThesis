@@ -45,12 +45,34 @@ class GenderSubspaceModel:
 		return np.asarray([clf.coef_[0] for clf in self.__classifiers])
 
 	def predict(self, embeddings: np.ndarray) -> np.ndarray:
+		"""
+		This method predicts the gender of the embeddings, according to the trained LinearSVCs.
+		Each embedding is considered as a group of #layers (=13) distinct embeddings. Each embedding will be
+		processed by the layer-corresponding SVC.
+
+		:param embeddings: A numpy array of dimensions [# samples, # layers (= 13), # features (= 768)]
+		:return: A numpy array of predictions for each sample and for each layer. The array has dimensions [# samples, # layers]
+		The predictions follows the class in the Gender Enumeration.
+		"""
 		predictions = np.zeros(shape=(len(embeddings), self.num_layers), dtype=np.uint8)
 		for layer, clf in enumerate(self.__classifiers):
 			predictions[:, layer] = clf.predict(embeddings[:, layer])
 		return predictions
 
 	def project(self, embeddings: np.ndarray) -> np.ndarray:
+		"""
+		This method computes the "gender projection" of the embeddings, according to the layers LinearSVCs.
+		The gender projection is:
+		-   geometrically, the ratio between the projection of the embedding over the gender direction, and the gender
+			direction itself.
+		-   algebraically, the scalar product between the embedding and the gender direction.
+		The gender direction corresponds to the coefficients of the trained SVC.
+		Each embedding is considered as a group of #layers (=13) distinct embeddings. Each embedding will be
+		processed by the layer-corresponding SVC.
+
+		:param embeddings: A numpy array of dimensions [# samples, # layers (= 13), # features (= 768)]
+		:return: A numpy array of projections for each sample and for each layer. The array has dimensions [# samples, # layers]
+		"""
 		projections = np.zeros(shape=(len(embeddings), self.num_layers), dtype=np.float)
 		for layer, clf in enumerate(self.__classifiers):
 			coefs = clf.coef_[0]

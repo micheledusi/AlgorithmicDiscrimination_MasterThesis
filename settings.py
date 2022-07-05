@@ -5,11 +5,19 @@
 
 # This file contains the settings for the whole project, in a centralized place.
 
+
+import numpy as np
 import torch
+
+from PIL import ImageColor
+from matplotlib.colors import ListedColormap, LinearSegmentedColormap
+
+from src.models.gender_enum import Gender
 
 # PYTORCH COMPUTING
 
 # Determinism
+
 RANDOM_SEED: int = 42
 torch.manual_seed(RANDOM_SEED)
 
@@ -54,7 +62,23 @@ OUTPUT_TABLE_FILE_EXTENSION: str = 'tsv'
 # PLOTTING
 
 # PyPlot colormaps
-GENDER_CYAN2PINK_COLORMAP_NAME: str = 'cool'
-PALETTE_COLORMAP_NAME: str = 'Set2'
 
 OUTPUT_IMAGE_FILE_EXTENSION: str = 'png'
+
+RGBA_MALE = ImageColor.getcolor(Gender.MALE.color, 'RGBA')
+RGBA_FEMALE = ImageColor.getcolor(Gender.FEMALE.color, 'RGBA')
+RGBA_NEUTER = ImageColor.getcolor(Gender.NEUTER.color, 'RGBA')
+RGBA_TRANSPARENT = [255, 255, 255, 0]
+
+COLORMAP_GENDER_MALE2FEMALE_: ListedColormap = LinearSegmentedColormap.from_list(
+	name='male-female',
+	colors=np.asarray([RGBA_MALE, RGBA_FEMALE]) / 255)
+COLORMAP_GENDER_MALE2NEUTER2FEMALE: ListedColormap = LinearSegmentedColormap.from_list(
+	name='male-neuter-female',
+	colors=np.asarray([RGBA_MALE, RGBA_NEUTER, RGBA_FEMALE]) / 255)
+COLORMAP_GENDER_MALE2TRANSPARENT2FEMALE: ListedColormap = LinearSegmentedColormap.from_list(
+	name='male-transparent-female',
+	colors=np.asarray([RGBA_MALE, RGBA_TRANSPARENT, RGBA_FEMALE]) / 255)
+
+COLORMAP_NAME_GENDER_CYAN2PINK: str = 'cool'
+COLORMAP_NAME_PALETTE: str = 'Set2'
