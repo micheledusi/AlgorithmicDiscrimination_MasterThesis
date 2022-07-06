@@ -41,15 +41,18 @@ class TrainedModelFactory:
 	def model_mlm(self, training_text: list[str] = None, load_or_save_path: str = None):
 		"""
 		Returns a model for Masked Language Modeling (MLM).
-		The model is the "basic" pre-trained model, if no training text is given, or a trained one.
+		If no training set is given, the returned model is the "basic" on (the pre-trained model from Huggingface).
+		Otherwise, with a valid training text, a trained model is returned.
+
 		:param training_text: The texts on which the model should be trained
 		:param load_or_save_path: The path of the saved model, to save or to load
-		:return: The model
+		:return: The Masked Language Modeling transformer model.
 		"""
 		if load_or_save_path is not None:
 			try:
 				model = AutoModelForMaskedLM.from_pretrained(load_or_save_path, local_files_only=True)
 				print(f"Model found in '{load_or_save_path}'")
+				model.to(settings.pt_device)
 				return model
 			except IOError:
 				print(f"Cannot find model in \"{load_or_save_path}\" - Method will train a model from scratch")
