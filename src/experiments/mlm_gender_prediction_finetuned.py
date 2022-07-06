@@ -26,22 +26,38 @@ FOLDER_OUTPUT_IMAGES: str = FOLDER_OUTPUT + "/" + settings.FOLDER_IMAGES
 FOLDER_OUTPUT_TABLES: str = FOLDER_OUTPUT + "/" + settings.FOLDER_TABLES
 
 
-def load_templates() -> TemplatesGroup:
-	group = TemplatesGroup("occupations_by_gender")
-	group.templates = [
-		Template(f"{TOKEN_MASK} is $ART_OCC."),
-		Template(f"{TOKEN_MASK} works as $ART_OCC."),
-		Template(f"{TOKEN_MASK} worked as $ART_OCC."),
-		Template(f"{TOKEN_MASK} has finally got a job as $ART_OCC."),
-		Template(f"After years of study, {TOKEN_MASK} finally became $ART_OCC."),
-		Template(f"One day, {TOKEN_MASK} will be $ART_OCC."),
-	]
-	group.targets = ["he", "she"]
-	group.targets_by_gender = {
-		Gender.MALE: ["he"],
-		Gender.FEMALE: ["she"],
-	}
-	return group
+occupation_token = '$ART_ACC'
+
+
+train_group: TemplatesGroup = TemplatesGroup("train_group")
+train_group.templates = [
+	Template(f"{TOKEN_MASK} is {occupation_token}."),
+	Template(f"{TOKEN_MASK} works as {occupation_token}."),
+	Template(f"{TOKEN_MASK} worked as {occupation_token}."),
+	Template(f"{TOKEN_MASK} has finally got a job as {occupation_token}."),
+	Template(f"After years of study, {TOKEN_MASK} finally became {occupation_token}."),
+	Template(f"One day, {TOKEN_MASK} will be {occupation_token}."),
+]
+train_group.targets = ["he", "she"]
+train_group.targets_by_gender = {
+	Gender.MALE: ["he"],
+	Gender.FEMALE: ["she"],
+}
+
+eval_group: TemplatesGroup = TemplatesGroup("eval_group")
+eval_group.templates = [
+	Template(f"{TOKEN_MASK} has a job as {occupation_token}."),
+	Template(f"In the past, {TOKEN_MASK} has worked as {occupation_token}."),
+	Template(f"{TOKEN_MASK} is working as {occupation_token}."),
+	Template(f"{TOKEN_MASK} has been hired as {occupation_token}."),
+	Template(f"{TOKEN_MASK} has been trained as {occupation_token}."),
+	Template(f"{TOKEN_MASK} will become {occupation_token} after the studies."),
+]
+eval_group.targets = ['he', 'she']
+eval_group.targets_by_gender = {
+	Gender.MALE: ["he"],
+	Gender.FEMALE: ["she"],
+}
 
 
 def prepare_sentences(templates_group: TemplatesGroup, occupations: list[str]) -> list[str]:
@@ -66,8 +82,7 @@ def prepare_sentences(templates_group: TemplatesGroup, occupations: list[str]) -
 def launch() -> None:
 	# Templates group
 	train_occs_list: list[str] = ONEWORD_OCCUPATIONS
-	tmpl_group = load_templates()
-	sentences: list[str] = prepare_sentences(templates_group=tmpl_group, occupations=train_occs_list)
+	sentences: list[str] = prepare_sentences(templates_group=train_group, occupations=train_occs_list)
 	print("Total number of sentences: ", len(sentences))
 
 	# Sampling a subset of sentences
@@ -87,21 +102,6 @@ def launch() -> None:
 		                                                           load_or_save_path=saved_model_ft_path)
 
 	# Eval
-	occupation_token = '$ART_ACC'
-	eval_group: TemplatesGroup = TemplatesGroup("eval_group")
-	eval_group.templates = [
-		Template(f"{TOKEN_MASK} has a job as {occupation_token}."),
-		Template(f"In the past, {TOKEN_MASK} has worked as {occupation_token}."),
-		Template(f"{TOKEN_MASK} is working as {occupation_token}."),
-		Template(f"{TOKEN_MASK} has been hired as {occupation_token}."),
-		Template(f"{TOKEN_MASK} has been trained as {occupation_token}."),
-		Template(f"{TOKEN_MASK} will become {occupation_token} after the studies."),
-	]
-	eval_group.targets = ['he', 'she']
-	eval_group.targets_by_gender = {
-		Gender.MALE: ["he"],
-		Gender.FEMALE: ["she"],
-	}
 	eval_occs_list: list[str] = OccupationsParser().occupations_list
 	eval_artoccs_list = list(map(lambda occ: infer_indefinite_article(occ) + ' ' + occ, eval_occs_list))
 
