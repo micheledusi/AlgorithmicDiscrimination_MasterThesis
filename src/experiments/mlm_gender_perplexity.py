@@ -10,6 +10,7 @@
 import gc
 import os
 import pickle
+import random
 
 import numpy as np
 import torch
@@ -43,7 +44,7 @@ def compute_perplexity_for_group(model, tokenizer, templates_group: TemplatesGro
 	scores: np.ndarray = np.zeros(shape=(len(templates_group.templates), len(occupations), len(targets)))
 	for i, tmpl in enumerate(templates_group.templates):
 		for j, occ in enumerate(occupations):
-			art_occ: str = infer_indefinite_article(occ)
+			art_occ: str = infer_indefinite_article(occ) + ' ' + occ
 			masked_sentence = tmpl.sentence.replace(occupation_token, art_occ)
 			for k, targ in enumerate(targets):
 				sentence = masked_sentence.replace(settings.TOKEN_MASK, targ)
@@ -94,7 +95,11 @@ def launch() -> None:
 	model_name = settings.DEFAULT_BERT_MODEL_NAME
 	factory = TrainedModelFactory(model_name=model_name)
 	training_samples: list[int] = [0, 500, 1000, 2000, 5000, 10000, 20000]
-	occs_list = ONEWORD_OCCUPATIONS[:500]
+
+	# occs_list = random.sample(ONEWORD_OCCUPATIONS, 1000)
+	# occs_list = ["nurse", "secretary", "engineer", "plumber", ]
+	occs_list = ONEWORD_OCCUPATIONS
+
 	results = Dataset.from_dict(mapping={'occupation': occs_list})
 
 	for samples_number in training_samples:
@@ -108,7 +113,7 @@ def launch() -> None:
 				scores = pickle.load(f)
 		else:
 			# Retrieving saved models from a previous experiment
-			saved_model_ft_path = settings.FOLDER_SAVED_MODELS + f"/mlm_gender_prediction_{model_name}_{samples_number}"
+			saved_model_ft_path = settings.FOLDER_SAVED_MODELS + f"/mlm_gender_prediction_finetuned/mlm_gender_prediction_{model_name}_{samples_number}"
 			model = factory.model_mlm(load_or_save_path=saved_model_ft_path)
 
 			print(f"Current model trained on: {samples_number} samples")

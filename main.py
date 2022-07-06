@@ -23,7 +23,7 @@ if __name__ == '__main__':
     # anomaly_detection_surprise.launch()
 
     # Masked Language Modeling
-    # mlm_gender_prediction.launch()
+    # mlm_gender_prediction_finetuned.launch()
     # mlm_gender_prediction_finetuned.launch()
     mlm_gender_perplexity.launch()
 

@@ -21,7 +21,7 @@ from settings import TOKEN_MASK
 import settings
 
 
-EXPERIMENT_NAME: str = "mlm_gender_prediction"
+EXPERIMENT_NAME: str = "mlm_gender_prediction_finetuned"
 FOLDER_OUTPUT: str = settings.FOLDER_RESULTS + "/" + EXPERIMENT_NAME
 FOLDER_OUTPUT_IMAGES: str = FOLDER_OUTPUT + "/" + settings.FOLDER_IMAGES
 FOLDER_OUTPUT_TABLES: str = FOLDER_OUTPUT + "/" + settings.FOLDER_TABLES

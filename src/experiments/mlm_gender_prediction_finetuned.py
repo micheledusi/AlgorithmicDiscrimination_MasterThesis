@@ -97,7 +97,7 @@ def launch() -> None:
 	models: dict[str, ] = {'base': factory.model_mlm(training_text=None)}
 	for samples_number in training_samples:
 		sentences_sampled = random.sample(sentences, samples_number)
-		saved_model_ft_path = settings.FOLDER_SAVED_MODELS + f"/mlm_gender_prediction_{model_name}_{samples_number}"
+		saved_model_ft_path = settings.FOLDER_SAVED_MODELS + f"/mlm_gender_prediction_finetuned/mlm_gender_prediction_{model_name}_{samples_number}"
 		models[f'fine-tuned-{samples_number}'] = factory.model_mlm(training_text=sentences_sampled,
 		                                                           load_or_save_path=saved_model_ft_path)
 
