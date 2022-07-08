@@ -109,7 +109,7 @@ def detect_gender_direction(encoder: WordEncoder) -> None:
 	subspace_plotter.plot_maximum_coefficients(
 		savepath=FOLDER_OUTPUT_IMAGES + f"/coefficients_plot.{settings.OUTPUT_IMAGE_FILE_EXTENSION}")
 	subspace_plotter.plot_2d_gendered_scatter_embeddings(embeddings=np.asarray(eval_x),
-	                                                     savepath=FOLDER_OUTPUT_IMAGES + f"/scatter_subspace.{settings.OUTPUT_IMAGE_FILE_EXTENSION}")
+	                                                     save_path=FOLDER_OUTPUT_IMAGES + f"/scatter_subspace.{settings.OUTPUT_IMAGE_FILE_EXTENSION}")
 
 	# Evaluation
 	predicted_gender = subspace_model.predict(embeddings=np.asarray(eval_x))
