@@ -133,6 +133,7 @@ dmypy.json
 
 # Ignoring saved models, that can be re-created
 saved/models/*
+saved/factory_checkpoints/*
 
 # Ignoring certain results
 results/*.xlsx
@@ -141,3 +142,4 @@ results/*/tables/*.xlsx
 results/embeddings_static_analysis/img/*
 results/embeddings_contextual_analysis/img/plot*.png
 results/training/*
+results/embeddings_gender_subspace_detection_finetuned/img/*
