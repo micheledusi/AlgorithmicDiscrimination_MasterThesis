@@ -81,7 +81,7 @@ def sample_random_grid_indices(lengths: list[int] | tuple[int, ...], samples: in
 
 
 def create_general_dataset(occupations: list[str], samples: int = "all") -> DatasetDict:
-	encoder = WordEncoder(bert_model=settings.DEFAULT_BERT_MODEL_NAME)
+	encoder = WordEncoder(model=settings.DEFAULT_BERT_MODEL_NAME)
 	data_occs: list[str] = []
 	data_tmpl: list[str] = []
 	data_gend: list[int] = []
@@ -212,8 +212,8 @@ def launch_linear_svc_with_split_dataset(occupations: list[str]) -> None:
 	eval_occs = occupations[split_index:]
 
 	# Preparing encoders
-	encoder_m = WordEncoder(bert_model=settings.DEFAULT_BERT_MODEL_NAME)
-	encoder_f = WordEncoder(bert_model=settings.DEFAULT_BERT_MODEL_NAME)
+	encoder_m = WordEncoder(model=settings.DEFAULT_BERT_MODEL_NAME)
+	encoder_f = WordEncoder(model=settings.DEFAULT_BERT_MODEL_NAME)
 	encoder_m.set_embedding_template("[CLS] he works as a %s [SEP]", 5)
 	encoder_f.set_embedding_template("[CLS] she works as a %s [SEP]", 5)
 
