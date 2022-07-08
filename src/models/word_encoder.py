@@ -48,6 +48,8 @@ class WordEncoder:
 			self.__tokenizer, self.__model = tokenizer, model
 		self.__embedding_template: str = settings.DEFAULT_STANDARDIZED_EMBEDDING_TEMPLATE
 		self.__embedding_word_index: int = settings.DEFAULT_STANDARDIZED_EMBEDDING_WORD_INDEX
+		# Using CUDA where available
+		self.__model.to(settings.pt_device)
 
 	@property
 	def tokenizer(self):
