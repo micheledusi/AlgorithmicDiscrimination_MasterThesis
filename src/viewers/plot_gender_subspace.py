@@ -14,36 +14,44 @@ from src.models.gender_subspace_model import GenderSubspaceModel
 
 class GenderSubspacePlotter:
 
-	__model: GenderSubspaceModel = None
-	__sorted_coefs_indices: np.ndarray = None
-	__layers: list[int]
+	def __init__(self, model: GenderSubspaceModel, layers: list[int] | range = 'all', layers_labels: list = None):
+		"""
+		Instance an object of class GenderSubspacePlotter.
 
-	def __init__(self, model: GenderSubspaceModel, layers: list[int] | range = 'all'):
-		self.__model = model
+		:param model: The "GenderSubspaceModel" instance that is taken as reference to plot. This model will predict the
+		values for the embeddings, when these will be plotted.
+		:param layers: A selection of layers to plot between the layers of the model. All the layers in this list/range
+		MUST be contained (as indices) in the model layers. By default, all the layers will be considered.
+		:param layers_labels: The names for the selected layers. If present,
+		"""
+		self.__model: GenderSubspaceModel = model
 		# Sorting model coefficients
 		# NOTE: WE ASSUME THE MODEL IS ALREADY TRAINED
-		self.__sorted_coefs_indices = np.argsort(-np.abs(self.model.coefficients), axis=-1)
+		self.__sorted_coefs_indices: np.ndarray = np.argsort(-np.abs(self.model.coefficients), axis=-1)
 		# The sorted coefficients indices are an array of [# layer, # indices].
 		# For each layer, the indices are sorted from the max to the min value of the coefficients of that layer.
 
 		# We work only on some layers
 		if layers == 'all':
-			self.__layers = list(range(self.model.num_layers))
+			self.__layers: list[int] = list(range(self.model.num_layers))
 		else:
 			for layer in layers:
 				if layer >= self.model.num_layers:
 					raise IndexError(f"Cannot select a layer with index {layer} in a model with only {self.model.num_layers} layers.")
 				if layer < 0:
 					raise IndexError(f"Cannot select a layer with negative index {layer}")
-			self.__layers = list(layers)
+			self.__layers: list[int] = list(layers)
+		if layers_labels is not None:
+			self.__layers_labels: list = layers_labels
+			assert len(self.__layers_labels) == len(self.__layers)
 
 	@property
 	def model(self) -> GenderSubspaceModel:
 		return self.__model
 
-	def plot_2d_gendered_scatter_embeddings(self, savepath: str, embeddings: np.ndarray) -> None:
+	def plot_2d_gendered_scatter_embeddings(self, save_path: str, embeddings: np.ndarray) -> None:
 		projections: np.ndarray = self.model.project(embeddings)
-		for layer in self.__layers:
+		for layer, label in zip(self.__layers, self.__layers_labels):
 
 			# Pre-processing the data
 			layer_principal_components = self.__sorted_coefs_indices[layer, :2]
@@ -66,12 +74,13 @@ class GenderSubspacePlotter:
 			ax.scatter(reduced_embeddings[:, 0], reduced_embeddings[:, 1], c=layer_projections, cmap=settings.COLORMAP_GENDER_MALE2TRANSPARENT2FEMALE)
 			ax.plot(gender_arrow[:, 0], gender_arrow[:, 1], color='#000', linewidth=1.0)  # Gender direction
 			ax.plot([0], [0], 'ok')  # Origin
-			ax.set_title(f"Layer {layer:02d}")
+			ax.set_title(f"Layer {label}")
 			ax.set_xlabel(f"Feature {layer_principal_components[0]}")
 			ax.set_ylabel(f"Feature {layer_principal_components[1]}")
 			ax.plot()
-			plt.savefig(savepath.replace(settings.OUTPUT_IMAGE_FILE_EXTENSION, f"{layer:02d}." + settings.OUTPUT_IMAGE_FILE_EXTENSION))
+			plt.savefig(save_path.replace(settings.OUTPUT_IMAGE_FILE_EXTENSION, f"{label}." + settings.OUTPUT_IMAGE_FILE_EXTENSION))
 			# plt.show()
+			plt.close(fig)
 		return
 
 	def plot_maximum_coefficients(self, savepath: str, highlights: int = 10, annotations: int = 2) -> None:
@@ -110,4 +119,5 @@ class GenderSubspacePlotter:
 
 		plt.savefig(savepath)
 		# plt.show()
+		plt.close(fig)
 		return
