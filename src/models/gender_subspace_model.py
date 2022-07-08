@@ -14,8 +14,6 @@ from sklearn import svm
 
 
 class GenderSubspaceModel:
-	__classifiers: list[svm.LinearSVC] = []
-	__num_features: int
 
 	def __init__(self, embeddings: np.ndarray, genders: list[IntEnum] | list[int], print_summary: bool = False) -> None:
 		"""
@@ -23,18 +21,23 @@ class GenderSubspaceModel:
 		:param embeddings: A 3D matrix of embeddings: [# samples, # layers = 13, # features = 768]
 		:param genders: A list of [# samples] gender, for the embeddings
 		"""
+		self.__num_features: int
 		num_samples, num_layers, self.__num_features = embeddings.shape
 		assert num_samples == len(genders)
+
 		if print_summary:
 			print("Training samples: ", num_samples)
 			print("Number of layers: ", num_layers)
 			print("Number of features: ", self.__num_features)
 
 		# Training a classifier for each layer
+		self.__classifiers: list[svm.LinearSVC] = []
 		for layer in range(num_layers):
 			clf = svm.LinearSVC(dual=False)
-			clf.fit(embeddings[:, layer], genders)
+			train_x = embeddings[:, layer]
+			clf.fit(train_x, genders)
 			self.__classifiers.append(clf)
+		assert self.num_layers == num_layers
 
 	@property
 	def num_layers(self) -> int:
@@ -55,7 +58,8 @@ class GenderSubspaceModel:
 		The predictions follows the class in the Gender Enumeration.
 		"""
 		predictions = np.zeros(shape=(len(embeddings), self.num_layers), dtype=np.uint8)
-		for layer, clf in enumerate(self.__classifiers):
+		for layer in range(self.num_layers):
+			clf = self.__classifiers[layer]
 			predictions[:, layer] = clf.predict(embeddings[:, layer])
 		return predictions
 
@@ -74,9 +78,10 @@ class GenderSubspaceModel:
 		:return: A numpy array of projections for each sample and for each layer. The array has dimensions [# samples, # layers]
 		"""
 		projections = np.zeros(shape=(len(embeddings), self.num_layers), dtype=np.float)
-		for layer, clf in enumerate(self.__classifiers):
-			coefs = clf.coef_[0]
-			projections[:, layer] = np.dot(embeddings[:, layer], coefs)
+		for layer in range(self.num_layers):
+			clf = self.__classifiers[layer]
+			coefficients = clf.coef_[0]
+			projections[:, layer] = np.dot(embeddings[:, layer], coefficients)
 		return projections
 
 
