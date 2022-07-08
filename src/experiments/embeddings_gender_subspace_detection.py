@@ -7,7 +7,7 @@
 # To allow deterministic comparison between embeddings, the context is standardized.
 # Please notice that this is not how BERT should be used, but that's done only to obtain a single deterministic
 # embedding for a given word / token.
-import matplotlib.pyplot as plt
+
 import numpy as np
 import torch
 
@@ -47,23 +47,30 @@ gendered_animal_words: dict[Gender, list[str]] = {
 LAYERS: range = range(13)
 
 
-def validate_model(model: GenderSubspaceModel, validation_x: list[np.ndarray], validation_y: list[Gender]) -> None:
+def validate_model(model: GenderSubspaceModel, validation_x: list[np.ndarray], validation_y: list[Gender],
+                   layers_labels: list[str]) -> None:
 	predicted_valid_y = model.predict(embeddings=np.asarray(validation_x))
 	errors_per_layer = np.zeros(shape=model.num_layers, dtype=np.uint8)
 	for vy, pys in zip(validation_y, predicted_valid_y):
 		errors_per_layer += [vy != py for py in pys]
 	accuracy_per_layer = np.ones(shape=errors_per_layer.shape) - errors_per_layer / len(validation_y)
 	print(f"Errors:     ", errors_per_layer)
-	for l, acc in enumerate(accuracy_per_layer):
-		print(f"Layer {l:02d}: acc = {acc:6.4%}")
+	for label, acc in zip(layers_labels, accuracy_per_layer):
+		print(f"Layer {label:s}: acc = {acc:6.4%}")
 
 
-def detect_gender_direction(encoder: WordEncoder) -> None:
+def detect_gender_direction(encoder: WordEncoder, layers: list[int] | range, model_id: str,
+                            folder_output_images: str, folder_output_tables: str) -> None:
 	"""
 	In this experiment we detect the gender direction with a Linear Support Vector Classifier.
 	The gender direction is the orthogonal direction to the hyperplane that best divides the considered two genders.
 	The hyperplane coefficients are the ones of the trained LinearSVC.
-	:param encoder: the encoding model.
+
+	:param folder_output_tables: The folder where to put computed tables of results
+	:param folder_output_images: The folder where to put produced images with results' plots
+	:param layers: the selected layers of the model. These layers will be used in the experiment
+	:param encoder: the WordEncoder model used to compute the embeddings.
+	:param model_id: The identifier for the model
 	:return: None
 	"""
 
@@ -80,18 +87,18 @@ def detect_gender_direction(encoder: WordEncoder) -> None:
 		# Training set - used to train the model
 		for gend, words in gendered_words.items():
 			for w in words:
-				embedding = encoder.embed_word_merged(w, layers=LAYERS).detach().numpy()
+				embedding = encoder.embed_word_merged(w, layers=layers).cpu().detach().numpy()
 				train_x.append(embedding)
 				train_y.append(gend)
 		# Validation set - we know the labels, so we can test the model
 		for gend, words in gendered_animal_words.items():
 			for w in words:
-				embedding = encoder.embed_word_merged(w, layers=LAYERS).detach().numpy()
+				embedding = encoder.embed_word_merged(w, layers=layers).cpu().detach().numpy()
 				valid_x.append(embedding)
 				valid_y.append(gend)
 		# Evaluation set - the experiment set, we don't know the labels
 		for tw in target_words:
-			embedding = encoder.embed_word_merged(tw, layers=LAYERS).detach().numpy()
+			embedding = encoder.embed_word_merged(tw, layers=layers).cpu().detach().numpy()
 			eval_x.append(embedding)
 
 	print("Training Dataset   - length: ", len(train_x))
@@ -99,23 +106,25 @@ def detect_gender_direction(encoder: WordEncoder) -> None:
 	print("Evaluation Dataset - length: ", len(eval_x))
 
 	# Training the gender subspace division model
-	subspace_model = GenderSubspaceModel(embeddings=np.asarray(train_x), genders=train_y)
+	subspace_model = GenderSubspaceModel(embeddings=np.asarray(train_x), genders=train_y, print_summary=False)
 
 	# Validation
-	# validate_model(model=subspace_model, validation_x=valid_x, validation_y=valid_y)
+	layer_indices_labels = [f"{layer:02d}" for layer in layers]
+	validate_model(model=subspace_model, validation_x=valid_x, validation_y=valid_y, layers_labels=layer_indices_labels)
 
 	# Analyze components
-	subspace_plotter: GenderSubspacePlotter = GenderSubspacePlotter(subspace_model)
+	subspace_plotter: GenderSubspacePlotter = GenderSubspacePlotter(model=subspace_model, layers_labels=layer_indices_labels)
 	subspace_plotter.plot_maximum_coefficients(
-		savepath=FOLDER_OUTPUT_IMAGES + f"/coefficients_plot.{settings.OUTPUT_IMAGE_FILE_EXTENSION}")
-	subspace_plotter.plot_2d_gendered_scatter_embeddings(embeddings=np.asarray(eval_x),
-	                                                     save_path=FOLDER_OUTPUT_IMAGES + f"/scatter_subspace.{settings.OUTPUT_IMAGE_FILE_EXTENSION}")
+		savepath=folder_output_images + f"/coefficients_plot_{model_id}.{settings.OUTPUT_IMAGE_FILE_EXTENSION}")
+	subspace_plotter.plot_2d_gendered_scatter_embeddings(
+		embeddings=np.asarray(eval_x),
+		save_path=folder_output_images + f"/scatter_subspace_{model_id}.{settings.OUTPUT_IMAGE_FILE_EXTENSION}")
 
 	# Evaluation
 	predicted_gender = subspace_model.predict(embeddings=np.asarray(eval_x))
 	projected_gender = subspace_model.project(embeddings=np.asarray(eval_x))
 
-	with open(f"{FOLDER_OUTPUT_TABLES}/occupations_static_spectrum.{settings.OUTPUT_TABLE_FILE_EXTENSION}", "w") as f:
+	with open(f"{folder_output_tables}/occupations_static_spectrum_{model_id}.{settings.OUTPUT_TABLE_FILE_EXTENSION}", "w") as f:
 		# Printing the header
 		header_list: list[str] = ["word"]
 		header_list.extend([f"pred_gender_{layer:02d}" for layer in range(subspace_model.num_layers)])
@@ -133,5 +142,6 @@ def detect_gender_direction(encoder: WordEncoder) -> None:
 def launch() -> None:
 	enc = WordEncoder()
 	# Detecting the gender direction
-	detect_gender_direction(enc)
+	detect_gender_direction(encoder=enc, model_id='base', layers=LAYERS,
+	                        folder_output_images=FOLDER_OUTPUT_IMAGES, folder_output_tables=FOLDER_OUTPUT_TABLES)
 	return
