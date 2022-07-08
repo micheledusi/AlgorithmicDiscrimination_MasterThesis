@@ -5,12 +5,11 @@
 
 # This script contains a class used to produce and embedding representation of words.
 
+from typing import Any
+
 import torch
-from transformers import BertTokenizer, BertModel
 import settings
-
-
-models_singletons: dict[str, tuple] = {}
+from src.models.trained_model_factory import TrainedModelFactory
 
 
 class WordEncoder:
@@ -22,24 +21,33 @@ class WordEncoder:
 	$OCCUPATION	for the desired layers.
 	"""
 
-	def __init__(self, bert_model: str = settings.DEFAULT_BERT_MODEL_NAME):
-		print("Loading encoder model...", end="")
-		self.__tokenizer, self.__model = WordEncoder.get_bert_model(bert_model)
-		print("Completed.")
+	def __init__(self, tokenizer: Any | None = None, model: str | Any = settings.DEFAULT_BERT_MODEL_NAME):
+		"""
+		This will initialize an instance of class WordEncoder.
+		We have two ways to instantiate a proper object:
+		(1) Give to the constructor a valid name (as a string), and a None tokenizer.
+		(2) Give to the constructor a proper pre-trained model, and the corresponding tokenizer.
+
+		:param tokenizer: The tokenizer associated with the model, or None if the tokenizer should be built from scratch.
+		:param model: The model name, or the pre-trained encoder model.
+		"""
+		# If the given "model" parameter is the name of the BERT model
+		if isinstance(model, str):
+			# Then we instance the tokenizer and the encoder from the Huggingface library, using our factory
+			factory = TrainedModelFactory(model_name=model)
+			self.__tokenizer = factory.tokenizer
+			self.__model = factory.get_model()
+			if tokenizer is not None:
+				raise ResourceWarning(
+					"A valid model name has been given. The tokenizer passed as a parameter will not be used.")
+		else:
+			# Otherwise, the model and tokenizer must be given as a parameter
+			if tokenizer is None:
+				raise AttributeError(
+					"Cannot instance a WordEncoder without the tokenizer and without a valid model name")
+			self.__tokenizer, self.__model = tokenizer, model
 		self.__embedding_template: str = settings.DEFAULT_STANDARDIZED_EMBEDDING_TEMPLATE
 		self.__embedding_word_index: int = settings.DEFAULT_STANDARDIZED_EMBEDDING_WORD_INDEX
-
-	@staticmethod
-	def get_bert_model(bert_model: str):
-		"""
-		Creates singletons based on necessity.
-		:return: A tuple composed of a tokenizer and an encoder
-		"""
-		if bert_model not in models_singletons:
-			tokenizer = BertTokenizer.from_pretrained(bert_model)
-			model = BertModel.from_pretrained(bert_model, output_hidden_states=True)
-			models_singletons[bert_model] = (tokenizer, model)
-		return models_singletons[bert_model]
 
 	@property
 	def tokenizer(self):
@@ -85,10 +93,10 @@ class WordEncoder:
 		sentence = self.embedding_template % word
 		# Tokenizing and returning PyTorch tensors
 		tokens_encoding = self.tokenizer(sentence,
-                                         add_special_tokens=False,
-                                         truncation=False,
-                                         return_attention_mask=False,
-                                         return_tensors="pt")
+		                                 add_special_tokens=False,
+		                                 truncation=False,
+		                                 return_attention_mask=False,
+		                                 return_tensors="pt")
 
 		# Trying to understand what tokens are formed from the word
 		# Extracting all the tokens
@@ -105,19 +113,20 @@ class WordEncoder:
 					tokens_n += 1
 				else:
 					break
-			# print("Total of tokens: ", tokens_n)
+		# print("Total of tokens: ", tokens_n)
 		# At the end, we obtain the indexes for the word tokens
 		word_indexes = slice(self.embedding_word_index, self.embedding_word_index + tokens_n)
 		# print(f"Tokens: {tokens[word_indexes]}")
 
 		# We process the tokens with the BERT model
-		embeddings = self.model(**tokens_encoding)
+		tokens_encoding.to(settings.pt_device)
+		embeddings = self.model(**tokens_encoding, output_hidden_states=True)
 
 		# For now, the dimensions are:
 		# [# all_layers, # batches, # tokens, # features]
 		# but the first dimension (the <layers> one) is a Python list.
 		# So we need to stack the elements in the list in one tensor:
-		embeddings = torch.stack(embeddings.hidden_states, dim=0)
+		embeddings = torch.stack(tensors=embeddings.hidden_states, dim=0)
 		# Now we remove the second dimension (batches) since it's unused
 		embeddings = torch.squeeze(embeddings, dim=1)
 
@@ -155,4 +164,3 @@ class WordEncoder:
 		"""
 		word_embedding = self.embed_word(word, layers, only_first_token=False)
 		return torch.mean(word_embedding, dim=0)
-
