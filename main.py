@@ -7,7 +7,8 @@ from src.experiments import embeddings_static_analysis
 from src.experiments import embeddings_gender_subspace_detection
 from src.experiments import embeddings_gender_subspace_detection_finetuned
 from src.experiments import embeddings_contextual_analysis
-from src.experiments import embeddings_gender_classification
+from src.experiments import embeddings_gender_classification_contextual
+from src.experiments import embeddings_gender_classification_classifiers_comparison
 from src.experiments import anomaly_detection_surprise
 from src.experiments import mlm_gender_prediction
 from src.experiments import mlm_gender_prediction_finetuned
@@ -19,7 +20,8 @@ if __name__ == '__main__':
     # embeddings_contextual_analysis.launch()
     # embeddings_gender_classification.launch()
     embeddings_gender_subspace_detection.launch()
-    embeddings_gender_subspace_detection_finetuned.launch()
+    # embeddings_gender_subspace_detection_finetuned.launch()
+    # embeddings_gender_classification_classifiers_comparison.launch()
 
     # Anomaly Detection
     # anomaly_detection_surprise.launch()
