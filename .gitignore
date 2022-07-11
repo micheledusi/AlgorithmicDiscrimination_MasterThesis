@@ -143,3 +143,4 @@ results/embeddings_static_analysis/img/*
 results/embeddings_contextual_analysis/img/plot*.png
 results/training/*
 results/embeddings_gender_subspace_detection_finetuned/img/*
+/results/embeddings_gender_classification_classifiers_comparison/tables/*
