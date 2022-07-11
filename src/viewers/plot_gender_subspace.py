@@ -9,12 +9,12 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 import settings
-from src.models.gender_subspace_model import GenderSubspaceModel
+from src.models.gender_classifier import _AbstractGenderClassifier
 
 
 class GenderSubspacePlotter:
 
-	def __init__(self, model: GenderSubspaceModel, layers: list[int] | range = 'all', layers_labels: list = None):
+	def __init__(self, model: _AbstractGenderClassifier, layers: list[int] | range = 'all', layers_labels: list = None):
 		"""
 		Instance an object of class GenderSubspacePlotter.
 
@@ -24,10 +24,10 @@ class GenderSubspacePlotter:
 		MUST be contained (as indices) in the model layers. By default, all the layers will be considered.
 		:param layers_labels: The names for the selected layers. If present,
 		"""
-		self.__model: GenderSubspaceModel = model
+		self.__model: _AbstractGenderClassifier = model
 		# Sorting model coefficients
 		# NOTE: WE ASSUME THE MODEL IS ALREADY TRAINED
-		self.__sorted_coefs_indices: np.ndarray = np.argsort(-np.abs(self.model.coefficients), axis=-1)
+		self.__sorted_coefs_indices: np.ndarray = np.argsort(-np.abs(self.model.features_importance), axis=-1)
 		# The sorted coefficients indices are an array of [# layer, # indices].
 		# For each layer, the indices are sorted from the max to the min value of the coefficients of that layer.
 
@@ -46,7 +46,7 @@ class GenderSubspacePlotter:
 			assert len(self.__layers_labels) == len(self.__layers)
 
 	@property
-	def model(self) -> GenderSubspaceModel:
+	def model(self) -> _AbstractGenderClassifier:
 		return self.__model
 
 	def plot_2d_gendered_scatter_embeddings(self, save_path: str, embeddings: np.ndarray) -> None:
@@ -64,7 +64,7 @@ class GenderSubspacePlotter:
 			# print("Layer projections - shape: ", layer_projections.shape)
 
 			# Computing the gender direction in 2D
-			reduced_gender_direction: np.ndarray = self.model.coefficients[layer, layer_principal_components]
+			reduced_gender_direction: np.ndarray = self.model.features_importance[layer, layer_principal_components]
 			reduced_gender_direction = reduced_gender_direction / (np.linalg.norm(reduced_gender_direction) + 1e-16)
 			gender_arrow = np.asarray([-reduced_gender_direction, reduced_gender_direction])
 			# print(f"Layer {layer} reduced gender direction: ", reduced_gender_direction)
@@ -83,7 +83,7 @@ class GenderSubspacePlotter:
 			plt.close(fig)
 		return
 
-	def plot_maximum_coefficients(self, savepath: str, highlights: int = 10, annotations: int = 2) -> None:
+	def plot_most_important_features(self, savepath: str, highlights: int = 10, annotations: int = 2) -> None:
 		"""
 		Plots the stem graphs for the SVC in the GenderSubspaceModel. With this function, the main components of the
 		coefficient vectors of the model will be easily identified.
@@ -96,25 +96,25 @@ class GenderSubspacePlotter:
 		                        figsize=(18, 20), dpi=100, constrained_layout=True)
 
 		for layer in self.__layers:
-			layer_coefs = self.model.coefficients[layer]
+			layer_imprt = self.model.features_importance[layer]
 			max_coefs_indices = self.__sorted_coefs_indices[layer, :highlights]
 			min_coefs_indices = self.__sorted_coefs_indices[layer, highlights:]
 			ann_coefs_indices = self.__sorted_coefs_indices[layer, :annotations]
 
 			# MIN
-			markerline, stemline, baseline, = axs[layer].stem(min_coefs_indices, layer_coefs[min_coefs_indices])
+			markerline, stemline, baseline, = axs[layer].stem(min_coefs_indices, layer_imprt[min_coefs_indices])
 			plt.setp(markerline, markersize=0.5, color='#CCC')
 			plt.setp(stemline, linewidth=1.0, color='#CCC')
 			plt.setp(baseline, linewidth=0.5, color='k')
 			# MAX
-			markerline, stemline, baseline, = axs[layer].stem(max_coefs_indices, layer_coefs[max_coefs_indices])
+			markerline, stemline, baseline, = axs[layer].stem(max_coefs_indices, layer_imprt[max_coefs_indices])
 			plt.setp(markerline, markersize=1.0, color="red")
 			plt.setp(stemline, linewidth=1.0, color="red")
 			plt.setp(baseline, linewidth=0.5, color='k')
 			# Annotations
 			for idx in ann_coefs_indices:
-				axs[layer].annotate(f"{idx}: {layer_coefs[idx]:.3f}",
-				                    xy=(idx, layer_coefs[idx]), xytext=(1, 0),
+				axs[layer].annotate(f"{idx}: {layer_imprt[idx]:.3f}",
+				                    xy=(idx, layer_imprt[idx]), xytext=(1, 0),
 				                    textcoords="offset points", fontsize=8, zorder=10)
 
 		plt.savefig(savepath)
