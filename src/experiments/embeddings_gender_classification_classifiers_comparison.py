@@ -63,8 +63,8 @@ def launch() -> None:
 		classifier=clf_lsvc, layers_labels=layers_labels)
 
 	# Compare predictions
-	predictions_lsvc = np.swapaxes(clf_lsvc.predict(np.asarray(test_x)), 0, 1)
-	predictions_tree = np.swapaxes(clf_tree.predict(np.asarray(test_x)), 0, 1)
+	predictions_lsvc = np.swapaxes(clf_lsvc.predict_gender_class(np.asarray(test_x)), 0, 1)
+	predictions_tree = np.swapaxes(clf_tree.predict_gender_class(np.asarray(test_x)), 0, 1)
 	# now predictions have dimensions: [# layers, # samples]
 
 	for label, layer_predictions_lsvc, layer_predictions_tree in zip(layers_labels, predictions_lsvc, predictions_tree):

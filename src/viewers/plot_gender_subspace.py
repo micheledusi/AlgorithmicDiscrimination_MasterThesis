@@ -7,9 +7,10 @@
 
 import numpy as np
 from matplotlib import pyplot as plt
+from sklearn import tree
 
 import settings
-from src.models.gender_classifier import _AbstractGenderClassifier
+from src.models.gender_classifier import _AbstractGenderClassifier, GenderDecisionTreeClassifier
 
 
 class GenderSubspacePlotter:
@@ -50,7 +51,7 @@ class GenderSubspacePlotter:
 		return self.__model
 
 	def plot_2d_gendered_scatter_embeddings(self, save_path: str, embeddings: np.ndarray) -> None:
-		projections: np.ndarray = self.model.project(embeddings)
+		projections: np.ndarray = self.model.predict_gender_spectrum(embeddings)
 		for layer, label in zip(self.__layers, self.__layers_labels):
 
 			# Pre-processing the data
@@ -64,7 +65,7 @@ class GenderSubspacePlotter:
 			# print("Layer projections - shape: ", layer_projections.shape)
 
 			# Computing the gender direction in 2D
-			reduced_gender_direction: np.ndarray = self.model.features_importance[layer, layer_principal_components]
+			reduced_gender_direction: np.ndarray = self.model.features_bias[layer, layer_principal_components]
 			reduced_gender_direction = reduced_gender_direction / (np.linalg.norm(reduced_gender_direction) + 1e-16)
 			gender_arrow = np.asarray([-reduced_gender_direction, reduced_gender_direction])
 			# print(f"Layer {layer} reduced gender direction: ", reduced_gender_direction)
@@ -121,3 +122,15 @@ class GenderSubspacePlotter:
 		# plt.show()
 		plt.close(fig)
 		return
+
+	def plot_tree(self, savepath: str) -> None:
+		if not isinstance(self.model, GenderDecisionTreeClassifier):
+			raise NotImplementedError("Cannot apply this method if the classifier is not an object of class GenderDecisionTreeClassifier")
+		# Otherwise
+		for layer, label in zip(self.__layers, self.__layers_labels):
+
+			clf = self.model.classifiers[layer]
+			tree.plot_tree(clf)
+			plt.suptitle("Layer " + label)
+			plt.savefig(savepath.replace(settings.OUTPUT_IMAGE_FILE_EXTENSION, f"{label}.{settings.OUTPUT_IMAGE_FILE_EXTENSION}"))
+			plt.close()

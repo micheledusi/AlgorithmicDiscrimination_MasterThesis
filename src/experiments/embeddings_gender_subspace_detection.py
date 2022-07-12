@@ -13,7 +13,8 @@ import torch
 
 import settings
 from src.models.gender_enum import Gender
-from src.models.gender_classifier import GenderLinearSupportVectorClassifier, GenderDecisionTreeClassifier
+from src.models.gender_classifier import GenderLinearSupportVectorClassifier, GenderDecisionTreeClassifier, \
+	_AbstractGenderClassifier
 from src.models.word_encoder import WordEncoder
 from src.parsers.jneidel_occupations_parser import ONEWORD_OCCUPATIONS
 from src.viewers.plot_gender_subspace import GenderSubspacePlotter
@@ -44,7 +45,7 @@ gendered_animal_words: dict[Gender, list[str]] = {
 	Gender.FEMALE: ["doe", "mare", "ewe", "sow", "hen", "duck", "cow", ],
 }
 
-LAYERS: range = range(13)
+LAYERS: range = range(0, 13)
 
 
 def get_labeled_dataset(encoder: WordEncoder, layers: list[int] | range,
@@ -84,72 +85,100 @@ def get_labeled_dataset(encoder: WordEncoder, layers: list[int] | range,
 			raise AttributeError(f"Cannot convert data of type {type(data)} to a proper dataset")
 
 
-def detect_gender_direction(encoder: WordEncoder, layers: list[int] | range, model_id: str,
+def get_trained_classifier(classifier_class, model_name: str, encoder: WordEncoder,
+                           layers: list[int] | range, layers_labels: list[str]) -> _AbstractGenderClassifier:
+	train_x, train_y = get_labeled_dataset(encoder=encoder, layers=layers, data=gendered_words)
+	valid_x, valid_y = get_labeled_dataset(encoder=encoder, layers=layers, data=gendered_animal_words)
+
+	# Training the gender subspace division model
+	print("Training model: ", model_name)
+	classifier = classifier_class(name=model_name, training_embeddings=np.asarray(train_x),
+	                              training_genders=train_y, layers_labels=layers_labels, print_summary=False)
+
+	# Validation
+	print("Evaluating model: ", model_name)
+	classifier.evaluate(evaluation_embeddings=valid_x, evaluation_genders=valid_y)
+
+	return classifier
+
+
+def detect_gender_direction(classifier: _AbstractGenderClassifier, encoder: WordEncoder,
+                            layers: list[int] | range, layers_labels: list[str],
                             folder_output_images: str, folder_output_tables: str) -> None:
 	"""
 	In this experiment we detect the gender direction with a Linear Support Vector Classifier.
 	The gender direction is the orthogonal direction to the hyperplane that best divides the considered two genders.
 	The hyperplane coefficients are the ones of the trained LinearSVC.
 
+	:param encoder: The word encoder
+	:param layers: The layers to analyze of the testing dataset
+	:param layers_labels: The labels for the given layers
 	:param folder_output_tables: The folder where to put computed tables of results
 	:param folder_output_images: The folder where to put produced images with results' plots
-	:param layers: the selected layers of the model. These layers will be used in the experiment
-	:param encoder: the WordEncoder model used to compute the embeddings.
-	:param model_id: The identifier for the model
+	:param classifier: The classifier model
 	:return: None
 	"""
 
 	# The words we want to analyze
 	target_words: list[str] = ONEWORD_OCCUPATIONS
-
-	train_x, train_y = get_labeled_dataset(encoder=encoder, layers=layers, data=gendered_words)
-	valid_x, valid_y = get_labeled_dataset(encoder=encoder, layers=layers, data=gendered_animal_words)
-	eval_x,        _ = get_labeled_dataset(encoder=encoder, layers=layers, data=target_words)
-
-	print("Training Dataset   - length: ", len(train_x))
-	print("Validation Dataset - length: ", len(valid_x))
-	print("Evaluation Dataset - length: ", len(eval_x))
-
-	# Training the gender subspace division model
-	layer_indices_labels = [f"{layer:02d}" for layer in layers]
-	subspace_model = GenderLinearSupportVectorClassifier(training_embeddings=np.asarray(train_x),
-	                                                     training_genders=train_y, layers_labels=layer_indices_labels,
-	                                                     print_summary=False)
-	# Validation
-	subspace_model.evaluate(evaluation_embeddings=valid_x, evaluation_genders=valid_y)
+	eval_x, _ = get_labeled_dataset(encoder=encoder, layers=layers, data=target_words)
 
 	# Analyze components
-	subspace_plotter: GenderSubspacePlotter = GenderSubspacePlotter(model=subspace_model,
-	                                                                layers_labels=layer_indices_labels)
+	subspace_plotter: GenderSubspacePlotter = GenderSubspacePlotter(model=classifier,
+	                                                                layers_labels=layers_labels)
 	subspace_plotter.plot_most_important_features(
-		savepath=folder_output_images + f"/coefficients_plot_{model_id}.{settings.OUTPUT_IMAGE_FILE_EXTENSION}")
+		savepath=folder_output_images + f"/coefficients_plot_{classifier.name}.{settings.OUTPUT_IMAGE_FILE_EXTENSION}")
 	subspace_plotter.plot_2d_gendered_scatter_embeddings(
 		embeddings=np.asarray(eval_x),
-		save_path=folder_output_images + f"/scatter_subspace_{model_id}.{settings.OUTPUT_IMAGE_FILE_EXTENSION}")
+		save_path=folder_output_images + f"/scatter_subspace_{classifier.name}.{settings.OUTPUT_IMAGE_FILE_EXTENSION}")
+	try:
+		subspace_plotter.plot_tree(
+			savepath=folder_output_images + f"/tree_scheme_{classifier.name}.{settings.OUTPUT_IMAGE_FILE_EXTENSION}")
+	except NotImplementedError:
+		pass
 
 	# Evaluation
-	predicted_gender = subspace_model.predict(embeddings=np.asarray(eval_x))
-	projected_gender = subspace_model.project(embeddings=np.asarray(eval_x))
+	predicted_gender_class = classifier.predict_gender_class(embeddings=np.asarray(eval_x))
+	predicted_gender_spectrum = classifier.predict_gender_spectrum(embeddings=np.asarray(eval_x))
+	computed_gender_relevance = classifier.compute_gender_relevance(embeddings=np.asarray(eval_x))
 
-	with open(f"{folder_output_tables}/occupations_static_spectrum_{model_id}.{settings.OUTPUT_TABLE_FILE_EXTENSION}",
-	          "w") as f:
+	with open(
+			f"{folder_output_tables}/occupations_static_spectrum_{classifier.name}.{settings.OUTPUT_TABLE_FILE_EXTENSION}",
+			"w") as f:
 		# Printing the header
 		header_list: list[str] = ["word"]
-		header_list.extend([f"pred_gender_{layer:02d}" for layer in range(subspace_model.num_layers)])
-		header_list.extend([f"proj_gender_{layer:02d}" for layer in range(subspace_model.num_layers)])
+		header_list.extend([f"gender_class_{layer:02d}" for layer in range(classifier.num_layers)])
+		header_list.extend([f"gender_spectrum_{layer:02d}" for layer in range(classifier.num_layers)])
+		header_list.extend([f"gender_relevance_{layer:02d}" for layer in range(classifier.num_layers)])
 		print(settings.OUTPUT_TABLE_COL_SEPARATOR.join(header_list), file=f)
 
 		# Printing the table
-		for word, pred, proj in zip(target_words, predicted_gender, projected_gender):
+		for word, g_class, g_spectrum, g_relevance in zip(target_words, predicted_gender_class,
+		                                                  predicted_gender_spectrum, computed_gender_relevance):
 			row_list = [word]
-			row_list.extend(map(str, pred))
-			row_list.extend(map(str, proj))
+			row_list.extend(map(str, g_class))
+			row_list.extend(map(str, g_spectrum))
+			row_list.extend(map(str, g_relevance))
 			print(settings.OUTPUT_TABLE_COL_SEPARATOR.join(row_list), file=f)
 
 
 def launch() -> None:
+	# Encoder
 	enc = WordEncoder()
+	# Layers
+	layers = LAYERS
+	layer_indices_labels = [f"{layer:02d}" for layer in layers]
+
+	gender_classifier_lsvc = get_trained_classifier(GenderLinearSupportVectorClassifier, model_name="base-lsvc",
+	                                                encoder=enc, layers=layers, layers_labels=layer_indices_labels)
+	gender_classifier_tree = get_trained_classifier(GenderDecisionTreeClassifier, model_name="base-tree",
+	                                                encoder=enc, layers=layers, layers_labels=layer_indices_labels)
+
 	# Detecting the gender direction
-	detect_gender_direction(encoder=enc, model_id='base-lsvc', layers=LAYERS,
+	detect_gender_direction(classifier=gender_classifier_lsvc, encoder=enc,
+	                        layers=layers, layers_labels=layer_indices_labels,
+	                        folder_output_images=FOLDER_OUTPUT_IMAGES, folder_output_tables=FOLDER_OUTPUT_TABLES)
+	detect_gender_direction(classifier=gender_classifier_tree, encoder=enc,
+	                        layers=layers, layers_labels=layer_indices_labels,
 	                        folder_output_images=FOLDER_OUTPUT_IMAGES, folder_output_tables=FOLDER_OUTPUT_TABLES)
 	return
