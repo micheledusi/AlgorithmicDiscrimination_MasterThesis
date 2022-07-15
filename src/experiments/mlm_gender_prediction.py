@@ -10,7 +10,6 @@
 import typing
 
 import numpy as np
-import torch
 from transformers import pipeline
 
 from src.parsers.winogender_occupations_parser import OccupationsParser

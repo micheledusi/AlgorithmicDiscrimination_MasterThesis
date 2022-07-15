@@ -19,9 +19,9 @@ if __name__ == '__main__':
     # embeddings_static_analysis.launch()
     # embeddings_contextual_analysis.launch()
     # embeddings_gender_classification.launch()
-    embeddings_gender_subspace_detection.launch()
+    # embeddings_gender_subspace_detection.launch()
     # embeddings_gender_subspace_detection_finetuned.launch()
-    # embeddings_gender_classification_classifiers_comparison.launch()
+    embeddings_gender_classification_classifiers_comparison.launch()
 
     # Anomaly Detection
     # anomaly_detection_surprise.launch()

@@ -13,7 +13,7 @@ from src.experiments.embeddings_gender_subspace_detection import get_labeled_dat
 from src.models.gender_classifier import GenderLinearSupportVectorClassifier, GenderDecisionTreeClassifier, \
 	_AbstractGenderClassifier
 from src.models.word_encoder import WordEncoder
-from src.parsers.jneidel_occupations_parser import ONEWORD_OCCUPATIONS
+from src.parsers import jobs_parser
 
 EXPERIMENT_NAME: str = "embeddings_gender_classification_classifiers_comparison"
 FOLDER_OUTPUT: str = settings.FOLDER_RESULTS + "/" + EXPERIMENT_NAME
@@ -38,15 +38,17 @@ def launch() -> None:
 	encoder = WordEncoder()
 	layers = range(0, 13)
 	layers_labels = [f"{layer:02d}" for layer in layers]
-	target_words = ONEWORD_OCCUPATIONS
+	target_words = jobs_parser.get_words_list()
 
 	train_x, train_y = get_labeled_dataset(encoder=encoder, layers=layers, data=gendered_words)
 	eval_x, eval_y = get_labeled_dataset(encoder=encoder, layers=layers, data=gendered_animal_words)
 	test_x, _ = get_labeled_dataset(encoder=encoder, layers=layers, data=target_words)
 
-	clf_lsvc = GenderLinearSupportVectorClassifier(training_embeddings=np.asarray(train_x), training_genders=train_y,
+	clf_lsvc = GenderLinearSupportVectorClassifier(name='lsvc',
+	                                               training_embeddings=np.asarray(train_x), training_genders=train_y,
 	                                               layers_labels=layers_labels, print_summary=True)
-	clf_tree = GenderDecisionTreeClassifier(training_embeddings=np.asarray(train_x), training_genders=train_y,
+	clf_tree = GenderDecisionTreeClassifier(name='tree',
+	                                        training_embeddings=np.asarray(train_x), training_genders=train_y,
 	                                        layers_labels=layers_labels, print_summary=True)
 
 	print("Linear SVC:")

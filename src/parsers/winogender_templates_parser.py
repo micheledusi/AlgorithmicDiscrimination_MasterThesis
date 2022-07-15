@@ -8,6 +8,9 @@
 import csv
 
 # Templates constants
+import settings
+from src.models.gender_enum import Gender
+
 MASK_OCCUPATION: str = "$OCCUPATION"
 MASK_PARTICIPANT: str = "$PARTICIPANT"
 
@@ -21,15 +24,20 @@ PRONOUNS_DICT: dict[str, tuple] = {
 	"$ACC_PRONOUN": ("him", "her", "them"),
 }
 
+GENDERS: list[Gender] = [Gender.MALE, Gender.FEMALE]
 
-def instantiate_gender(templates: list[str], genders: list[int] = [MALE_INDEX, FEMALE_INDEX]) -> list[list[str]]:
+
+def instantiate_gender(templates: list[str], genders=None) -> list[list[str]]:
 	"""
 	From a list of string templates containing "pronoun holes", returns a list where
 	every hole is filled with the appropriate pronoun, declined in all the desired genders.
 	The templates have:
+
 	- "$NOM_PRONOUN" for the nominative pronouns: ("he", "she", "they"),
 	- "$POSS_PRONOUN" for the possessive pronouns: ("his", "her", "their"),
 	- "$ACC_PRONOUN" for the accusative pronouns: ("him", "her", "them"),
+
+	:type genders: list[Gender]
 	:param templates: The list of templates with one pronoun mask in each.
 		If more pronoun masks appear in the same string template, the function still works but declines all the pronouns
 		with the same gender. It's not possible to obtain all the crossed combinations.
@@ -37,21 +45,22 @@ def instantiate_gender(templates: list[str], genders: list[int] = [MALE_INDEX, F
 	:return: The list of list of instatiated sentences. Each template produces a list of sentences, each one instantiated
 		with a gender.
 	"""
+	# Replacing mutable value
+	if genders is None:
+		genders = GENDERS
+
 	sentences: list[list[str]] = []
 	for tmpl in templates:
-	# Replacing pronouns
+		# Replacing pronouns
 		genders_tuple = []
 
 		# For every desired gender
-		for gend_ix in genders:
+		for gend in genders:
 			gend_sentence = tmpl
-
-			# For every pronoun type (Nominative, Possessive, Accusative):
-			for pron_type, pronouns_tuple in PRONOUNS_DICT.items():
-				# pron_type is a string, e.g. "$NOM_PRONOUN"
-				# pronouns_tuple is a tuple of corresponding english pronouns, e.g. ("he", "she", "they")
-
-				gend_sentence = gend_sentence.replace(pron_type, pronouns_tuple[gend_ix])
+			# Replacing pronouns
+			gend_sentence = gend_sentence.replace("$NOM_PRONOUN", gend.nom_pronoun)
+			gend_sentence = gend_sentence.replace("$ACC_PRONOUN", gend.acc_pronoun)
+			gend_sentence = gend_sentence.replace("$POSS_PRONOUN", gend.poss_pronoun)
 			genders_tuple.append(gend_sentence)
 		sentences.append(genders_tuple)
 	return sentences
@@ -64,7 +73,7 @@ def read_templates() -> list[str]:
 	:return: the list of pairs of sentences: [(male_sentence, female_sentence)]
 	"""
 	with open("data/WinoGender/templates.tsv") as tsv_file:
-		read_tsv = csv.reader(tsv_file, delimiter="\t")
+		read_tsv = csv.reader(tsv_file, delimiter=settings.OUTPUT_TABLE_COL_SEPARATOR)
 
 		templates_list: list[str] = []
 		for row in read_tsv:
@@ -80,7 +89,8 @@ def read_templates() -> list[str]:
 		return templates_list
 
 
-def get_sentences_pairs() -> list[tuple[str, str]]:
+def get_sentences_pairs() -> list[list[str]]:
 	tmpls = read_templates()
 	pairs = instantiate_gender(tmpls)
 	return pairs
+

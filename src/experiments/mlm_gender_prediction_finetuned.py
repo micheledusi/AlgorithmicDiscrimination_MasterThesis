@@ -10,15 +10,16 @@ import random
 
 import numpy as np
 
-from src.experiments.mlm_gender_prediction import compute_scores, print_table_file
+from src.experiments.mlm_gender_prediction import compute_scores
 from src.models.gender_enum import Gender
-from src.models.trained_model_factory import TrainedModelFactory
+from src.models.trained_model_factory import TrainedModelForMaskedLMFactory
+from src.parsers import jobs_parser
+from src.parsers.article_inference import infer_indefinite_article
 from src.parsers.winogender_occupations_parser import OccupationsParser
-from src.parsers.jneidel_occupations_parser import ONEWORD_OCCUPATIONS, infer_indefinite_article
 from src.models.templates import TemplatesGroup, Template
 from settings import TOKEN_MASK
 import settings
-from src.viewers.plot_prediction_bars import plot_image_bars_by_gender_by_template, plot_image_bars_by_gender
+
 
 EXPERIMENT_NAME: str = "mlm_gender_prediction_finetuned"
 FOLDER_OUTPUT: str = settings.FOLDER_RESULTS + "/" + EXPERIMENT_NAME
@@ -81,7 +82,7 @@ def prepare_sentences(templates_group: TemplatesGroup, occupations: list[str]) -
 
 def launch() -> None:
 	# Templates group
-	train_occs_list: list[str] = ONEWORD_OCCUPATIONS
+	train_occs_list: list[str] = jobs_parser.get_words_list()
 	sentences: list[str] = prepare_sentences(templates_group=train_group, occupations=train_occs_list)
 	print("Total number of sentences: ", len(sentences))
 
@@ -92,13 +93,13 @@ def launch() -> None:
 	model_name = settings.DEFAULT_BERT_MODEL_NAME
 	# model_name = "distilbert-base-uncased"
 
-	factory = TrainedModelFactory(model_name=model_name)
+	factory = TrainedModelForMaskedLMFactory(model_name=model_name)
 	training_samples: list[int] = [500, 1000, 2000, 5000, 10000, 20000]
-	models: dict[str, ] = {'base': factory.model_mlm(training_text=None)}
+	models: dict[str, ] = {'base': factory.get_model(training_text=None)}
 	for samples_number in training_samples:
 		sentences_sampled = random.sample(sentences, samples_number)
 		saved_model_ft_path = settings.FOLDER_SAVED_MODELS + f"/mlm_gender_prediction_finetuned/mlm_gender_prediction_{model_name}_{samples_number}"
-		models[f'fine-tuned-{samples_number}'] = factory.model_mlm(training_text=sentences_sampled,
+		models[f'fine-tuned-{samples_number}'] = factory.get_model(training_text=sentences_sampled,
 		                                                           load_or_save_path=saved_model_ft_path)
 
 	# Eval

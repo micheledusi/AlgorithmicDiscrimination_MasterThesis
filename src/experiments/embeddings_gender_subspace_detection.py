@@ -16,7 +16,7 @@ from src.models.gender_enum import Gender
 from src.models.gender_classifier import GenderLinearSupportVectorClassifier, GenderDecisionTreeClassifier, \
 	_AbstractGenderClassifier
 from src.models.word_encoder import WordEncoder
-from src.parsers.jneidel_occupations_parser import ONEWORD_OCCUPATIONS
+from src.parsers import jobs_parser
 from src.viewers.plot_gender_subspace import GenderSubspacePlotter
 
 EXPERIMENT_NAME: str = "embeddings_gender_subspace_detection"
@@ -120,7 +120,7 @@ def detect_gender_direction(classifier: _AbstractGenderClassifier, encoder: Word
 	"""
 
 	# The words we want to analyze
-	target_words: list[str] = ONEWORD_OCCUPATIONS
+	target_words: list[str] = jobs_parser.get_words_list()
 	eval_x, _ = get_labeled_dataset(encoder=encoder, layers=layers, data=target_words)
 
 	# Analyze components

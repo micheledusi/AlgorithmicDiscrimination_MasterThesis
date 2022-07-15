@@ -24,6 +24,9 @@ torch.manual_seed(RANDOM_SEED)
 # If available, torch computes on a parallel architecture
 pt_device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+# Machine Learning
+TRAIN_TEST_SPLIT_PERCENTAGE = 0.2
+
 # FILES
 
 # Folders structure
@@ -35,6 +38,9 @@ FOLDER_SAVED_DATA = FOLDER_SAVED + '/data'
 
 FOLDER_TABLES = 'tables'
 FOLDER_IMAGES = 'img'
+
+# Serialization
+OUTPUT_SERIALIZED_FILE_EXTENSION: str = 'pkl'
 
 # ENCODING
 

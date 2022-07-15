@@ -10,7 +10,6 @@
 import gc
 import os
 import pickle
-import random
 
 import numpy as np
 import torch
@@ -18,10 +17,10 @@ from datasets import Dataset
 
 import settings
 from src.models.templates import TemplatesGroup
-from src.models.trained_model_factory import TrainedModelFactory
+from src.models.trained_model_factory import TrainedModelForMaskedLMFactory
 from src.experiments.mlm_gender_prediction_finetuned import eval_group, occupation_token
-from src.parsers.jneidel_occupations_parser import infer_indefinite_article, ONEWORD_OCCUPATIONS
-
+from src.parsers import jobs_parser
+from src.parsers.article_inference import infer_indefinite_article
 
 EXPERIMENT_NAME: str = "mlm_gender_perplexity"
 FOLDER_OUTPUT: str = settings.FOLDER_RESULTS + "/" + EXPERIMENT_NAME
@@ -93,12 +92,12 @@ def compute_perplexity_for_text(model, tokenizer, text) -> float:
 def launch() -> None:
 	# Chosen model
 	model_name = settings.DEFAULT_BERT_MODEL_NAME
-	factory = TrainedModelFactory(model_name=model_name)
+	factory = TrainedModelForMaskedLMFactory(model_name=model_name)
 	training_samples: list[int] = [0, 500, 1000, 2000, 5000, 10000, 20000]
 
 	# occs_list = random.sample(ONEWORD_OCCUPATIONS, 1000)
 	# occs_list = ["nurse", "secretary", "engineer", "plumber", ]
-	occs_list = ONEWORD_OCCUPATIONS
+	occs_list = jobs_parser.get_words_list()
 
 	results = Dataset.from_dict(mapping={'occupation': occs_list})
 
@@ -114,7 +113,7 @@ def launch() -> None:
 		else:
 			# Retrieving saved models from a previous experiment
 			saved_model_ft_path = settings.FOLDER_SAVED_MODELS + f"/mlm_gender_prediction_finetuned/mlm_gender_prediction_{model_name}_{samples_number}"
-			model = factory.model_mlm(load_or_save_path=saved_model_ft_path)
+			model = factory.get_model(load_or_save_path=saved_model_ft_path)
 
 			print(f"Current model trained on: {samples_number} samples")
 			scores = compute_perplexity_for_group(model=model, tokenizer=factory.tokenizer,

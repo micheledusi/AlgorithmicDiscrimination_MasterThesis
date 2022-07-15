@@ -15,9 +15,8 @@ from datasets import Dataset, DatasetDict
 from src.models.gender_enum import Gender
 from src.models.templates import Template
 from src.models.word_encoder import WordEncoder
-from src.parsers.jneidel_occupations_parser import ONEWORD_OCCUPATIONS
 import settings
-
+from src.parsers import jobs_parser
 
 EXPERIMENT_NAME: str = "embeddings_gender_classification"
 FOLDER_OUTPUT: str = settings.FOLDER_RESULTS + "/" + EXPERIMENT_NAME
@@ -269,7 +268,7 @@ def launch() -> None:
 	Launches the experiments of this session.
 	"""
 	# Retrieving occupations list
-	occupations_list = ONEWORD_OCCUPATIONS
+	occupations_list = jobs_parser.get_words_list()
 
 	# First sub-experiment
 	# launch_linear_svc_with_split_dataset(occupations=occupations_list)
