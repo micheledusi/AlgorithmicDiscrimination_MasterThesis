@@ -134,6 +134,7 @@ dmypy.json
 # Ignoring saved models, that can be re-created
 saved/models/*
 saved/factory_checkpoints/*
+saved/data/embeddings/*
 
 # Ignoring certain results
 results/*.xlsx
