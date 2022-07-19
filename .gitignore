@@ -135,6 +135,7 @@ dmypy.json
 saved/models/*
 saved/factory_checkpoints/*
 saved/data/embeddings/*
+saved/data/datasets/*
 
 # Ignoring certain results
 results/*.xlsx
