@@ -26,16 +26,18 @@ FOLDER_OUTPUT_TABLES: str = FOLDER_OUTPUT + "/" + settings.FOLDER_TABLES
 
 gendered_words: dict[Gender, list[str]] = {
 	Gender.MALE: ["he", "him", "his",
-	              "man", "male", "boy", "masculinity", "masculine",
+	              "man", "male", "boy", "masculinity", "masculine", "manly",
 	              "husband", "father", "dad", "daddy", "uncle", "grandpa", "grandfather",
-	              "brother", "son", "nephew",
-	              "sir", "king", "lord", "prince", "duke", "master",
+	              "brother", "son", "nephew", "grandson", "widower",
+	              "sir", "king", "lord", "prince", "duke", "master", "emperor",
+	              "marquess", "earl", "viscount", "baron",
 	              ],
 	Gender.FEMALE: ["she", "her", "her",
-	                "woman", "female", "girl", "femininity", "feminine",
+	                "woman", "female", "girl", "femininity", "feminine", "womanly",
 	                "wife", "mother", "mom", "mommy", "aunt", "grandma", "grandmother",
-	                "sister", "daughter", "niece",
-	                "madam", "queen", "lady", "princess", "duchess", "mistress",
+	                "sister", "daughter", "niece", "granddaughter", "widow",
+	                "madam", "queen", "lady", "princess", "duchess", "mistress", "empress",
+	                "marchioness", "countess", "viscountess", "baroness",
 	                ],
 }
 
