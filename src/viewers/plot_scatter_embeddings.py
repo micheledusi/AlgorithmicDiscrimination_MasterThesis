@@ -12,7 +12,7 @@ from datetime import datetime
 from pathlib import Path
 from torch import Tensor, pca_lowrank, squeeze
 import matplotlib.pyplot as plt
-from matplotlib.colors import Normalize
+from matplotlib.colors import Normalize, Colormap
 import settings
 
 
@@ -24,21 +24,29 @@ class EmbeddingsScatterPlotter:
 
 	DEFAULT_COLORMAP: str = settings.COLORMAP_NAME_GENDER_CYAN2PINK
 
-	__embeddings = None
-	__pca_2d_vectors: Tensor = None
-	__pca_3d_vectors: Tensor = None
-	__labels: [str] = None
-	__colors: [float] = None
-	__sizes: [float] = None
-	__colormap: str = DEFAULT_COLORMAP
-	__cmap_norm: Normalize = None
-	__ready_to_show: bool = False
-	__figure = None
-
 	def __init__(self, embeddings: Tensor = None):
 		self.embeddings = embeddings
-		self.__reset_derived_attributes()
-		return
+		# Defining instance attributes
+		self.__pca_2d_vectors = None
+		self.__pca_3d_vectors = None
+		self.labels = None
+		self.colors = None
+		self.sizes = None
+		self.colormap: str | Colormap = self.DEFAULT_COLORMAP
+		self.__cmap_norm = None
+		self.__ready_to_show = False
+		self.__figure = None
+
+	def __reset_derived_attributes(self) -> None:
+		self.__pca_2d_vectors = None
+		self.__pca_3d_vectors = None
+		self.labels = None
+		self.colors = None
+		self.sizes = None
+		self.colormap = self.DEFAULT_COLORMAP
+		self.__cmap_norm = None
+		self.__ready_to_show = False
+		self.__figure = None
 
 	@property
 	def embeddings(self) -> Tensor:
@@ -68,11 +76,11 @@ class EmbeddingsScatterPlotter:
 		self.__labels = labels
 
 	@property
-	def colors(self) -> [float]:
+	def colors(self) -> list[float]:
 		return self.__colors
 
 	@colors.setter
-	def colors(self, colors: [float]) -> None:
+	def colors(self, colors: list[float]) -> None:
 		if colors is None:
 			# The <None> value is allowed
 			self.__colors = None
@@ -85,27 +93,33 @@ class EmbeddingsScatterPlotter:
 			self.__cmap_norm = Normalize(vmin=min(self.colors), vmax=max(self.colors))
 
 	@property
-	def sizes(self) -> [float]:
+	def sizes(self) -> list[float] | float:
 		return self.__sizes
 
 	@sizes.setter
-	def sizes(self, sizes: [float]) -> None:
+	def sizes(self, sizes: list[float] | float) -> None:
 		if sizes is None:
 			# The <None> value is allowed
 			self.__sizes = None
-		elif self.count() != len(sizes):
+		elif isinstance(sizes, list) and self.count() != len(sizes):
 			# The number of sizes MUST be equals to the number of embeddings
 			raise RuntimeError("Labels number is different from embeddings count")
 		self.__sizes = sizes
 
 	@property
-	def colormap(self) -> str:
+	def colormap(self) -> str | Colormap:
 		return self.__colormap
 
 	@colormap.setter
-	def colormap(self, colormap: str) -> None:
-		plt.set_cmap(colormap)
+	def colormap(self, colormap: str | Colormap) -> None:
+		"""
+		Sets the colormap.
+		:param colormap: An instance of the colormap OR the string of a saved colormap.
+		"""
 		self.__colormap = colormap
+		# If it's a string, set the PLT property
+		if isinstance(colormap, str):
+			plt.set_cmap(colormap)
 
 	def count(self) -> int:
 		"""
@@ -114,16 +128,16 @@ class EmbeddingsScatterPlotter:
 		"""
 		return self.embeddings.size()[0]
 
-	def __reset_derived_attributes(self) -> None:
-		self.__pca_2d_vectors = None
-		self.__pca_3d_vectors = None
-		self.labels = None
-		self.colors = None
-		self.sizes = None
-		self.colormap = self.DEFAULT_COLORMAP
-		self.__cmap_norm = None
-		self.__ready_to_show = False
-		self.__figure = None
+	def __get_color_of_value(self, value: float):
+		# Normalizes the value
+		normalized_col_float = self.__cmap_norm(value)
+		if isinstance(self.colormap, str):
+			color = plt.get_cmap(self.colormap)(normalized_col_float)
+			return color
+		elif isinstance(self.colormap, Colormap):
+			color = self.colormap(normalized_col_float)
+			return color
+		return None
 
 	def compute_pca_2d_vectors(self) -> Tensor:
 		"""
@@ -149,11 +163,11 @@ class EmbeddingsScatterPlotter:
 		self.__pca_3d_vectors, S, V = pca_lowrank(self.embeddings, q=3)
 		return self.__pca_3d_vectors
 
-	def plot_2d_pc(self) -> None:
+	def plot_2d_pc(self) -> typing.Any:
 		"""
 		Creates a 2D plot with the principal components of the embeddings, using the procedure of PCA.
 		If the embeddings have multiple points, they're connected with lines showing how the embeddings evolve through the layers.
-		:return: None
+		:return: The axis where the graph is plotted
 		"""
 		# If the 2D coordinates are not computed yet:
 		if self.__pca_2d_vectors is None:
@@ -167,7 +181,7 @@ class EmbeddingsScatterPlotter:
 
 		if len(xs.shape) == 1 and len(ys.shape) == 1:
 			# If there is no history, points are individually visualized with no connections between them
-			ax.scatter(xs, ys, c=self.colors, s=self.sizes)
+			ax.scatter(xs, ys, c=self.colors, s=self.sizes, cmap=self.colormap)
 
 			# If labels are set, the plot is annotated by points
 			if self.labels is not None:
@@ -180,8 +194,7 @@ class EmbeddingsScatterPlotter:
 			for i, (xh, yh, col_float) in enumerate(zip(xs, ys, self.colors)):
 				# xh and yh represent the history of each embedding across the layers
 				layers = len(xh)
-				normalized_col_float = self.__cmap_norm(col_float)
-				color = plt.get_cmap(self.colormap)(normalized_col_float)
+				color = self.__get_color_of_value(col_float)
 				ax.plot(xh, yh, color="#aaaaaa", alpha=0.1)
 				ax.scatter(xh, yh, color=color, s=range(layers))
 
@@ -191,9 +204,10 @@ class EmbeddingsScatterPlotter:
 
 		# Allowing the visualization
 		self.__ready_to_show = True
-		return
+		# Returning axis
+		return ax
 
-	def plot_3d_pc(self) -> None:
+	def plot_3d_pc(self) -> typing.Any:
 		"""
 		Creates a 3D plot with the principal components of the embeddings, using the procedure of PCA.
 		:return: None
@@ -202,13 +216,13 @@ class EmbeddingsScatterPlotter:
 		if self.__pca_3d_vectors is None:
 			self.compute_pca_3d_vectors()
 		# We extract the Xs, Ys and Zs of the points
-		coords = self.__pca_2d_vectors.moveaxis(-1, 0)  # Brings the last dimension (the one reduced with PCA) to front
+		coords = self.__pca_3d_vectors.moveaxis(-1, 0)  # Brings the last dimension (the one reduced with PCA) to front
 		coords = coords.detach().numpy()
 		x, y, z = coords[0], coords[1], coords[2]
 
 		self.__figure = plt.figure()
 		ax = self.__figure.add_subplot(projection='3d')
-		ax.scatter(x, y, z, c=self.colors, s=self.sizes)
+		ax.scatter(x, y, z, c=self.colors, s=self.sizes, cmap=self.colormap)
 
 		# If labels are set, the plot is annotated by points
 		if self.labels is not None:
@@ -216,7 +230,7 @@ class EmbeddingsScatterPlotter:
 				ax.text(x, y, z, label)
 		# Allowing the visualization
 		self.__ready_to_show = True
-		return
+		return ax
 
 	def show(self) -> typing.Any:
 		"""
@@ -227,7 +241,8 @@ class EmbeddingsScatterPlotter:
 		if not self.__ready_to_show:
 			raise RuntimeWarning("Cannot show non-existent plot")
 		else:
-			return plt.show()
+			result = self.__figure.show()
+			return result
 
 	def save(self, filename: str, timestamp: bool = False):
 		"""
