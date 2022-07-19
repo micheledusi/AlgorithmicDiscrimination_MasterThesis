@@ -75,9 +75,12 @@ OUTPUT_IMAGE_FILE_EXTENSION: str = 'png'
 RGBA_MALE = ImageColor.getcolor(Gender.MALE.color, 'RGBA')
 RGBA_FEMALE = ImageColor.getcolor(Gender.FEMALE.color, 'RGBA')
 RGBA_NEUTER = ImageColor.getcolor(Gender.NEUTER.color, 'RGBA')
-RGBA_TRANSPARENT = [255, 255, 255, 0]
+RGBA_MALE_TRANSPARENT = [*RGBA_MALE[:3], 0]
+RGBA_FEMALE_TRANSPARENT = [*RGBA_FEMALE[:3], 0]
+RGBA_NEUTER_TRANSPARENT = [*RGBA_NEUTER[:3], 0]
+RGBA_WHITE_TRANSPARENT = [255, 255, 255, 0]
 
-COLORMAP_GENDER_MALE2FEMALE_: ListedColormap = LinearSegmentedColormap.from_list(
+COLORMAP_GENDER_MALE2FEMALE: ListedColormap = LinearSegmentedColormap.from_list(
 	name='male-female',
 	colors=np.asarray([RGBA_MALE, RGBA_FEMALE]) / 255)
 COLORMAP_GENDER_MALE2NEUTER2FEMALE: ListedColormap = LinearSegmentedColormap.from_list(
@@ -85,7 +88,15 @@ COLORMAP_GENDER_MALE2NEUTER2FEMALE: ListedColormap = LinearSegmentedColormap.fro
 	colors=np.asarray([RGBA_MALE, RGBA_NEUTER, RGBA_FEMALE]) / 255)
 COLORMAP_GENDER_MALE2TRANSPARENT2FEMALE: ListedColormap = LinearSegmentedColormap.from_list(
 	name='male-transparent-female',
-	colors=np.asarray([RGBA_MALE, RGBA_TRANSPARENT, RGBA_FEMALE]) / 255)
+	colors=np.asarray([RGBA_MALE, RGBA_WHITE_TRANSPARENT, RGBA_FEMALE]) / 255)
+COLORMAP_GENDER_MALE25_TRANSPARENT50_FEMALE25: ListedColormap = LinearSegmentedColormap.from_list(
+	name='male-transparent-female',
+	colors=np.asarray([RGBA_MALE,                   # __0 %
+	                   RGBA_MALE_TRANSPARENT,       # _25 %
+	                   RGBA_WHITE_TRANSPARENT,      # _50 %
+	                   RGBA_FEMALE_TRANSPARENT,     # _75 %
+	                   RGBA_FEMALE                  # 100 %
+	                   ]) / 255)
 
 COLORMAP_NAME_GENDER_CYAN2PINK: str = 'cool'
 COLORMAP_NAME_PALETTE: str = 'Set2'

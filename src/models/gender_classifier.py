@@ -22,7 +22,7 @@ class _AbstractGenderClassifier(ABC):
 	The subclass must specify the type of classifier that work on each level.
 	"""
 
-	def __init__(self, name: str, training_embeddings: np.ndarray, training_genders: list[IntEnum] | list[int],
+	def __init__(self, name: str, training_embeddings: np.ndarray, training_genders: list[IntEnum] | list[int] | np.ndarray,
 	             layers_labels: list[str] = None, print_summary: bool = False) -> None:
 		"""
 		Creates an embedding classifier that detects the gender.
