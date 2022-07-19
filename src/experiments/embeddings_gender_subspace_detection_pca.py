@@ -15,7 +15,9 @@ import torch
 from matplotlib import pyplot as plt
 
 import settings
-from src.models.gender_classifier import GenderLinearSupportVectorClassifier
+from src.models.dimensionality_reducer import GenderClassifierReducer, PipelineReducer, PCAReducer, TrainedPCAReducer
+from src.models.gender_classifier import GenderLinearSupportVectorClassifier, GenderDecisionTreeClassifier
+from src.models.layers_iterator import LayersIterator
 from src.parsers.serializer import Serializer
 from src.viewers.plot_scatter_embeddings import EmbeddingsScatterPlotter
 
@@ -25,7 +27,9 @@ FOLDER_OUTPUT_IMAGES: str = FOLDER_OUTPUT + "/" + settings.FOLDER_IMAGES
 FOLDER_OUTPUT_TABLES: str = FOLDER_OUTPUT + "/" + settings.FOLDER_TABLES
 
 LAYERS: range = range(8, 13)
-DIM_SELECTION_SIZE: int = 350
+CMAP = settings.COLORMAP_GENDER_MALE2TRANSPARENT2FEMALE
+# Resetting Torch random seed for repeatable PCA results
+torch.manual_seed(settings.RANDOM_SEED)
 
 
 def launch() -> None:
@@ -36,72 +40,45 @@ def launch() -> None:
 	layer_indices_labels = [f"{layer:02d}" for layer in layers]
 
 	# Retrieving the training dataset
-	gendered_ds = ser.load_dataset('gendered_words')
+	gendered_ds = ser.load_dataset('gendered_words.tsv')
 	train_x = np.asarray(gendered_ds['embedding'], dtype=np.float)[:, layers]
 	train_y = np.asarray(gendered_ds['gender'])
-	print("Train_X shape = ", train_x.shape)
-	print("Train_Y shape = ", train_y.shape)
-
-	# Training the gender subspace division model
-	classifier = GenderLinearSupportVectorClassifier(name="base-lsvc", training_embeddings=train_x,
-	                                                 training_genders=train_y, layers_labels=layer_indices_labels)
-	# Extracting the most relevant features for each layer
-	clf_features = classifier.get_most_important_features()
-	# We take only the first N dimensions
-	selected_features = [indices[:DIM_SELECTION_SIZE] for (indices, _) in clf_features]
+	print("Training embeddings shape: ", train_x.shape)
 
 	# Retrieving embeddings with dimensions: (1678, 3, 768)
-	embeddings: torch.Tensor = ser.load_embeddings("jobs", 'pt')
-	print("embeddings.size = ", embeddings.size())
-	# We'll need to select only the wanted embeddings
-	gender_spectrum = classifier.predict_gender_spectrum(embeddings.detach().numpy())
-	gender_spectrum = gender_spectrum.swapaxes(0, 1)
-	print("gender_spectrum.shape = ", gender_spectrum.shape)
+	embeddings: np.ndarray = ser.load_embeddings("jobs", 'np')[:, layers]
+	print("Starting embeddings shape: ", embeddings.shape)
 
-	# Resetting Torch random seed for repeatable PCA results
-	torch.manual_seed(settings.RANDOM_SEED)
+	# Gender spectrum
+	gender_clf = GenderLinearSupportVectorClassifier("gender_clf", train_x, train_y, layer_indices_labels)
+	gender_spectrum = gender_clf.predict_gender_spectrum(embeddings).swapaxes(0, 1)
 
-	for layer, label, features, spectrum in zip(layers, layer_indices_labels, selected_features, gender_spectrum):
-		print("Current layer: ", label)
-		# indices.shape = (768,)
-		# importance.shape = (768,)
+	# Classifiers and reducers
+	lsvc_clf_768 = GenderLinearSupportVectorClassifier("base-lsvc-768", train_x, train_y, layer_indices_labels)
+	reducer_768_50 = GenderClassifierReducer(from_m=768, to_n=50, classifier=lsvc_clf_768)
+	train_50 = reducer_768_50.reduce(train_x)
+	reducer_50_2 = TrainedPCAReducer(train_50, to_n=2)
 
-		layer_reduced_embeddings = embeddings[:, layer, features]
-		print(f"Layer embeddings reduced to N={DIM_SELECTION_SIZE} dimensions: ", layer_reduced_embeddings.shape)
+	# Instancing the final reducer object
+	reducer = PipelineReducer([
+		reducer_768_50,
+		reducer_50_2,
+	])
 
-		cmap = settings.COLORMAP_GENDER_MALE2TRANSPARENT2FEMALE
-		# cmap = plt.get_cmap('rainbow')
+	# Reducing dimensions with reducer
+	print("\nReducing embeddings...")
+	reduced_embeddings = reducer.reduce(embeddings)
+	print("Reduced embeddings shape: ", reduced_embeddings.shape)
 
+	for layer_emb, label, spectrum in zip(LayersIterator(reduced_embeddings), layer_indices_labels, gender_spectrum):
 		# Using plotter to visualize embeddings
-		plotter = EmbeddingsScatterPlotter(layer_reduced_embeddings)
-		plotter.colormap = cmap
+		plotter = EmbeddingsScatterPlotter(torch.Tensor(layer_emb))
+		plotter.colormap = CMAP
 		plotter.colors = spectrum
 		plotter.sizes = 12
 		ax = plotter.plot_2d_pc()
 		ax.scatter([0], [0], c='k')
 		plt.suptitle("Layer " + label)
-		plotter.save(filename=FOLDER_OUTPUT_IMAGES + f'/reduced_to_{DIM_SELECTION_SIZE}_layer.{label}.' + settings.OUTPUT_IMAGE_FILE_EXTENSION)
-		# plotter.show()
-
-		"""
-		# The second part of the experiment aims to compute the approximate dimensionality of gender subspace
-		print("PCA")
-		reduced_embeddings, eigenvalues, principal_components = torch.pca_lowrank(embeddings[:, layer], q=DIM_SELECTION_SIZE)
-		print("Embeddings reduced to: ", reduced_embeddings.shape)
-		print("Principal components: ", principal_components.shape, " = Transformation matrix from 768 to N")
-		explained_variance = eigenvalues / sum(eigenvalues)
-
-		interrupted: bool = False
-		partial_sum: float = 0
-		for i, variance in enumerate(explained_variance):
-			if variance <= 0.01:
-				interrupted = True
-				break
-			partial_sum += variance
-			print(f"Component {i:3d} - explained variance = {variance:6.3%} - partial sum = {partial_sum:6.3%}")
-		if interrupted:
-			print("Remaining components - explained variance < 1.00%")
-
-		print("------------\n")
-		"""
+		plotter.save(
+			filename=FOLDER_OUTPUT_IMAGES + f'/pipeline_layer.{label}.' + settings.OUTPUT_IMAGE_FILE_EXTENSION)
 	return
