@@ -174,7 +174,7 @@ class EmbeddingsScatterPlotter:
 			self.compute_pca_2d_vectors()
 		# We extract the Xs and Ys of the points
 		coords = self.__pca_2d_vectors.moveaxis(-1, 0)  # Brings the last dimension (the one reduced with PCA) to front
-		coords = coords.detach().numpy()  # Converting into NumPy array
+		coords = coords.detach().cpu().numpy()  # Converting into NumPy array
 		xs, ys = coords[0], coords[1]
 
 		self.__figure, ax = plt.subplots()
@@ -217,7 +217,7 @@ class EmbeddingsScatterPlotter:
 			self.compute_pca_3d_vectors()
 		# We extract the Xs, Ys and Zs of the points
 		coords = self.__pca_3d_vectors.moveaxis(-1, 0)  # Brings the last dimension (the one reduced with PCA) to front
-		coords = coords.detach().numpy()
+		coords = coords.detach().cpu().numpy()
 		x, y, z = coords[0], coords[1], coords[2]
 
 		self.__figure = plt.figure()
@@ -261,3 +261,79 @@ class EmbeddingsScatterPlotter:
 			path = Path(filename)
 			filename = path.parent / f"{path.stem}_{tstamp}{path.suffix}"
 		return plt.savefig(fname=filename)
+
+	def write_data(self, filename: str, timestamp: bool = False):
+		if not self.__ready_to_show:
+			raise RuntimeWarning("Cannot write non-existent plot data")
+		if timestamp:
+			tstamp: str = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+			# Inserting the timestamp between the filename and the extension
+			path = Path(filename)
+			filename = path.parent / f"{path.stem}_{tstamp}{path.suffix}"
+
+		# Writing to file
+		with open(filename, "w") as f:
+			# Header
+			cols: list[str] = ["id"]
+			if self.__pca_2d_vectors is not None:
+				if len(self.__pca_2d_vectors.size()) == 2:
+					cols.extend(["2dx", "2dy"])
+				elif len(self.__pca_2d_vectors.size()) == 3:
+					for layer in range(self.__pca_2d_vectors.size(dim=1)):
+						cols.extend([f"2d{layer}x", f"2d{layer}y"])
+				else:
+					raise RuntimeError("Cannot write data with dimension: ", self.__pca_2d_vectors.size())
+			if self.__pca_3d_vectors is not None:
+				if len(self.__pca_3d_vectors.size()) == 2:
+					cols.extend(["3dx", "3dy", "3dz"])
+				elif len(self.__pca_3d_vectors.size()) == 3:
+					for layer in range(self.__pca_3d_vectors.size(dim=1)):
+						cols.extend([f"3d{layer}x", f"3d{layer}y", f"3d{layer}z"])
+				else:
+					raise RuntimeError("Cannot write data with dimension: ", self.__pca_3d_vectors.size())
+			if self.labels is not None:
+				cols.append("label")
+			if self.colors is not None:
+				cols.append("color")
+			if self.sizes is not None:
+				cols.append("size")
+			print(settings.OUTPUT_TABLE_COL_SEPARATOR.join(cols), file=f)
+
+			# Data
+			for i in range(len(self.embeddings)):
+				# Single record
+				record: list[str] = [f"{i}"]
+				if self.__pca_2d_vectors is not None:
+					if len(self.__pca_2d_vectors.size()) == 2:
+						record.extend([
+							str(self.__pca_2d_vectors[i, 0].item()),
+							str(self.__pca_2d_vectors[i, 1].item()),
+						])
+					elif len(self.__pca_2d_vectors.size()) == 3:
+						for layer in range(self.__pca_2d_vectors.size(dim=1)):
+							record.extend([
+								str(self.__pca_2d_vectors[i, layer, 0].item()),
+								str(self.__pca_2d_vectors[i, layer, 1].item()),
+							])
+				if self.__pca_3d_vectors is not None:
+					if len(self.__pca_3d_vectors.size()) == 2:
+						record.extend([
+							str(self.__pca_3d_vectors[i, 0].item()),
+							str(self.__pca_3d_vectors[i, 1].item()),
+							str(self.__pca_3d_vectors[i, 2].item()),
+						])
+					elif len(self.__pca_3d_vectors.size()) == 3:
+						for layer in range(self.__pca_3d_vectors.size(dim=1)):
+							record.extend([
+								str(self.__pca_3d_vectors[i, layer, 0].item()),
+								str(self.__pca_3d_vectors[i, layer, 1].item()),
+								str(self.__pca_3d_vectors[i, layer, 2].item()),
+							])
+				if self.labels is not None:
+					record.append(self.labels[i])
+				if self.colors is not None:
+					record.append(str(self.colors[i]))
+				if self.sizes is not None:
+					record.append(str(self.sizes[i]))
+				print(settings.OUTPUT_TABLE_COL_SEPARATOR.join(record), file=f)
+		return

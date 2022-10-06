@@ -156,16 +156,19 @@ def plot_image_bars_by_gender(filepath: str, group: TemplatesGroup, occupations:
 	return
 
 
-def plot_image_bars_by_gender_by_template(filepath: str, template: Template, group: TemplatesGroup,
+def plot_image_bars_by_gender_by_template(filepath: str, template: Template | None, group: TemplatesGroup,
                                           occupations: list[str], data: np.ndarray) -> None:
 	"""
 	Plots and saves an image graph representing the prediction values from the gender prediction task.
 	The bars will be indicated by occupations. There will be a set of bars for each gender in the group.
 	:param filepath: The filepath where to save the image.
-	:param template: The template to plot
+	:param template: The template to plot, or None if the results are averaged over multiple templates
 	:param group: The group of templates it belongs to
 	:param occupations: The list of occupations to plot
 	:param data: The result data to visualize
 	:return: None
 	"""
-	return plot_image_bars_by_gender(filepath, group, occupations, data, title=template.sentence)
+	if template is None:
+		return plot_image_bars_by_gender(filepath, group, occupations, data, title=group.name)
+	else:
+		return plot_image_bars_by_gender(filepath, group, occupations, data, title=template.sentence)

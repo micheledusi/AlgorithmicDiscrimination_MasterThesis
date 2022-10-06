@@ -10,13 +10,15 @@
 
 import numpy as np
 import torch
+from datasets import Dataset, DatasetDict
 
 import settings
 from src.models.gender_enum import Gender
 from src.models.gender_classifier import GenderLinearSupportVectorClassifier, GenderDecisionTreeClassifier, \
 	_AbstractGenderClassifier
 from src.models.word_encoder import WordEncoder
-from src.parsers import jobs_parser
+from src.parsers import jobs_parser, gendered_words_parser
+from src.parsers.winogender_occupations_parser import OccupationsParser
 from src.viewers.plot_gender_subspace import GenderSubspacePlotter
 
 EXPERIMENT_NAME: str = "embeddings_gender_subspace_detection"
@@ -24,6 +26,7 @@ FOLDER_OUTPUT: str = settings.FOLDER_RESULTS + "/" + EXPERIMENT_NAME
 FOLDER_OUTPUT_IMAGES: str = FOLDER_OUTPUT + "/" + settings.FOLDER_IMAGES
 FOLDER_OUTPUT_TABLES: str = FOLDER_OUTPUT + "/" + settings.FOLDER_TABLES
 
+"""
 gendered_words: dict[Gender, list[str]] = {
 	Gender.MALE: ["he", "him", "his",
 	              "man", "male", "boy", "masculinity", "masculine", "manly",
@@ -40,22 +43,25 @@ gendered_words: dict[Gender, list[str]] = {
 	                "marchioness", "countess", "viscountess", "baroness",
 	                ],
 }
+"""
 
-gendered_animal_words: dict[Gender, list[str]] = {
-	# Gender.NEUTER: ["rabbit", "horse", "sheep", "pig", "chicken", "duck", "cattle", "goose", "fox", "tiger", "lion", ],
-	Gender.MALE: ["buck", "stallion", "raw", "boar", "rooster", "drake", "bull", ],
-	Gender.FEMALE: ["doe", "mare", "ewe", "sow", "hen", "duck", "cow", ],
-}
+TEST_SPLIT_PERCENTAGE = 0.0
+if TEST_SPLIT_PERCENTAGE > 0:
+	gendered_words: DatasetDict = gendered_words_parser.get_words_split_dataset(test_split_percentage=TEST_SPLIT_PERCENTAGE)
+else:
+	gendered_words: Dataset = gendered_words_parser.get_words_dataset()
 
 LAYERS: range = range(0, 13)
 
 
 def get_labeled_dataset(encoder: WordEncoder, layers: list[int] | range,
-                        data: dict[Gender, list[str]] | list[str]) -> tuple[list[np.ndarray], list[Gender] | None]:
+                        data: dict[Gender, list[str]] | list[str] | Dataset
+                        ) -> tuple[list[np.ndarray], list[Gender] | None]:
 	"""
 	This method gets a collection of words and returns the proper dataset of embeddings and labels.
 	The collection can have different types:
 		- If it's a dictionary, then it must have the genders as keys, and the values must be list of words of the associated gender.
+		- If it's a dataset, it must have the column "word" and the column "gender" in it.
 		- If it's a list, then the words are the element of the list. In this case, the dataset will not contain any label.
 
 	In the former case, the words are associated with gender and the dataset can be labeled.
@@ -76,6 +82,14 @@ def get_labeled_dataset(encoder: WordEncoder, layers: list[int] | range,
 				embedding = encoder.embed_word_merged(w, layers=layers).cpu().detach().numpy()
 				x.append(embedding)
 			return x, None
+		elif isinstance(data, Dataset):
+			for row in data:
+				w: str = row["word"]
+				gend: Gender = Gender(row["gender"])
+				embedding = encoder.embed_word_merged(w, layers=layers).cpu().detach().numpy()
+				x.append(embedding)
+				y.append(gend)
+			return x, y
 		elif isinstance(data, dict):
 			for gend, words in data.items():
 				for w in words:
@@ -89,17 +103,22 @@ def get_labeled_dataset(encoder: WordEncoder, layers: list[int] | range,
 
 def get_trained_classifier(classifier_class, model_name: str, encoder: WordEncoder,
                            layers: list[int] | range, layers_labels: list[str]) -> _AbstractGenderClassifier:
-	train_x, train_y = get_labeled_dataset(encoder=encoder, layers=layers, data=gendered_words)
-	valid_x, valid_y = get_labeled_dataset(encoder=encoder, layers=layers, data=gendered_animal_words)
+	# Getting training data
+	training_data: DatasetDict = gendered_words["train"] if TEST_SPLIT_PERCENTAGE > 0 else gendered_words
 
 	# Training the gender subspace division model
+	train_x, train_y = get_labeled_dataset(encoder=encoder, layers=layers, data=training_data)
 	print("Training model: ", model_name)
 	classifier = classifier_class(name=model_name, training_embeddings=np.asarray(train_x),
 	                              training_genders=train_y, layers_labels=layers_labels, print_summary=False)
 
 	# Validation
-	print("Evaluating model: ", model_name)
-	classifier.evaluate(evaluation_embeddings=valid_x, evaluation_genders=valid_y)
+	if TEST_SPLIT_PERCENTAGE > 0:
+		valid_x, valid_y = get_labeled_dataset(encoder=encoder, layers=layers, data=gendered_words["test"])
+		print("Evaluating model: ", model_name)
+		classifier.evaluate(evaluation_embeddings=valid_x, evaluation_genders=valid_y)
+	else:
+		print("Since the test set is empty, we're gonna skip the evaluation phase.")
 
 	return classifier
 
@@ -122,14 +141,20 @@ def detect_gender_direction(classifier: _AbstractGenderClassifier, encoder: Word
 	"""
 
 	# The words we want to analyze
-	target_words: list[str] = jobs_parser.get_words_list()
+	target_words: list[str] = jobs_parser.get_words_list()  # JNeidel
+	# target_words: list[str] = OccupationsParser().occupations_list  # WinoGender
 	eval_x, _ = get_labeled_dataset(encoder=encoder, layers=layers, data=target_words)
 
 	# Analyze components
 	subspace_plotter: GenderSubspacePlotter = GenderSubspacePlotter(model=classifier,
 	                                                                layers_labels=layers_labels)
-	subspace_plotter.plot_most_important_features(
-		savepath=folder_output_images + f"/coefficients_plot_{classifier.name}.{settings.OUTPUT_IMAGE_FILE_EXTENSION}")
+	# Visualize most important features
+	print(f"Plotting and printing the most important features for the model <{classifier.name}>")
+	subspace_plotter.plot_most_important_features(savepath=folder_output_images + f"/coefficients_plot_{classifier.name}.{settings.OUTPUT_IMAGE_FILE_EXTENSION}")
+	subspace_plotter.write_most_important_features(savepath=folder_output_tables + f"/coefficients_plot_{classifier.name}.{settings.OUTPUT_TABLE_FILE_EXTENSION}")
+
+	# Visualize scatter plots
+	print(f"Plotting the embeddings for model <{classifier.name}>")
 	subspace_plotter.plot_2d_gendered_scatter_embeddings(
 		embeddings=np.asarray(eval_x),
 		save_path=folder_output_images + f"/scatter_subspace_{classifier.name}.{settings.OUTPUT_IMAGE_FILE_EXTENSION}")

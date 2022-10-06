@@ -50,8 +50,12 @@ def plot_occupations_embeddings(enc: WordEncoder, parser: OccupationsParser) -> 
 		plotter = EmbeddingsScatterPlotter(layer_professions_embeddings)
 		plotter.labels = professions
 		plotter.colors = percentages
-		plotter.plot_2d_pc()
-		plotter.save(f"{FOLDER_OUTPUT_IMAGES}/all_winogender_occupations_2D_layer{layer:02d}.png", timestamp=False)
+		plotter.sizes = [10] * len(plotter.labels)
+		# plotter.plot_2d_pc()
+		# plotter.save(f"{FOLDER_OUTPUT_IMAGES}/all_winogender_occupations_2D_layer{layer:02d}.png", timestamp=False)
+		plotter.plot_3d_pc()
+		plotter.save(f"{FOLDER_OUTPUT_IMAGES}/all_winogender_occupations_3D_layer{layer:02d}.png", timestamp=False)
+		plotter.write_data(f"{FOLDER_OUTPUT_TABLES}/all_winogender_occupations_3D_layer{layer:02d}.{settings.OUTPUT_TABLE_FILE_EXTENSION}", timestamp=False)
 		# plotter.show()
 	return
 
@@ -83,6 +87,9 @@ def plot_divisive_occupations_embeddings_history(enc: WordEncoder, parser: Occup
 	plotter.colors = percentages
 	plotter.plot_2d_pc()
 	plotter.save(f"{FOLDER_OUTPUT_IMAGES}/extreme_winogender_occupations_history_2D.png", timestamp=True)
+	plotter.write_data(f"{FOLDER_OUTPUT_TABLES}/extreme_winogender_occupations_history_2D.{settings.OUTPUT_TABLE_FILE_EXTENSION}",
+		timestamp=False)
+
 	# plotter.show()
 	return
 
@@ -96,6 +103,6 @@ def launch() -> None:
 	enc = WordEncoder()
 	parser = OccupationsParser()
 
-	plot_occupations_embeddings(enc, parser)
+	# plot_occupations_embeddings(enc, parser)
 	plot_divisive_occupations_embeddings_history(enc, parser)
 	return

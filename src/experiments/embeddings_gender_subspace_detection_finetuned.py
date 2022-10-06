@@ -26,7 +26,7 @@ FOLDER_OUTPUT_IMAGES: str = FOLDER_OUTPUT + "/" + settings.FOLDER_IMAGES
 FOLDER_OUTPUT_TABLES: str = FOLDER_OUTPUT + "/" + settings.FOLDER_TABLES
 FOLDER_SAVED_MODELS_EXPERIMENT: str = settings.FOLDER_SAVED_MODELS + "/" + EXPERIMENT_NAME
 
-LAYERS: range | list = range(13)
+LAYERS: range | list = range(12, 13)
 LAYERS_LABELS: list[str] = [f"{layer:02d}" for layer in LAYERS]
 
 
@@ -40,7 +40,7 @@ def launch() -> None:
 	random.seed(settings.RANDOM_SEED)
 	model_name = settings.DEFAULT_BERT_MODEL_NAME
 	factory = TrainedModelForMaskedLMFactory(model_name=model_name)
-	training_samples: list[int] = [0, 2000, 5000]
+	training_samples: list[int] = [0, 500, 1000, 2000, 5000, 10000, 20000]
 
 	# For every number of training dataset size
 	for samples_number in training_samples:

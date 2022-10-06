@@ -8,10 +8,10 @@
 import numpy as np
 
 import settings
-from src.experiments.embeddings_gender_subspace_detection import get_labeled_dataset, gendered_words, \
-	gendered_animal_words
+from src.experiments.embeddings_gender_subspace_detection import get_labeled_dataset, gendered_words
 from src.models.gender_classifier import GenderLinearSupportVectorClassifier, GenderDecisionTreeClassifier, \
 	_AbstractGenderClassifier
+from src.models.gender_enum import Gender
 from src.models.word_encoder import WordEncoder
 from src.parsers import jobs_parser
 
@@ -19,6 +19,13 @@ EXPERIMENT_NAME: str = "embeddings_gender_classification_classifiers_comparison"
 FOLDER_OUTPUT: str = settings.FOLDER_RESULTS + "/" + EXPERIMENT_NAME
 FOLDER_OUTPUT_IMAGES: str = FOLDER_OUTPUT + "/" + settings.FOLDER_IMAGES
 FOLDER_OUTPUT_TABLES: str = FOLDER_OUTPUT + "/" + settings.FOLDER_TABLES
+
+
+gendered_animal_words: dict[Gender, list[str]] = {
+	# Gender.NEUTER: ["rabbit", "horse", "sheep", "pig", "chicken", "duck", "cattle", "goose", "fox", "tiger", "lion", ],
+	Gender.MALE: ["buck", "stallion", "raw", "boar", "rooster", "drake", "bull", ],
+	Gender.FEMALE: ["doe", "mare", "ewe", "sow", "hen", "duck", "cow", ],
+}
 
 
 def print_important_features_table(filepath: str, classifier: _AbstractGenderClassifier, layers_labels: list[str]) -> None:

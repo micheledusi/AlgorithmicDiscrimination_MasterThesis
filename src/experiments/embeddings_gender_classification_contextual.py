@@ -34,12 +34,18 @@ templates: list[Template] = [
 	Template("[CLS] $NOM_PRONOUN has a job as a %s [SEP]", target_index=7),
 	Template("[CLS] $NOM_PRONOUN worked as a %s [SEP]", target_index=5),
 	Template("[CLS] $NOM_PRONOUN will be a %s [SEP]", target_index=5),
+
 	Template("[CLS] $NOM_PRONOUN could never become a %s [SEP]", target_index=6),
 	Template("[CLS] $NOM_PRONOUN will be an amazing %s [SEP]", target_index=6),
 	Template("[CLS] Being a %s is all $NOM_PRONOUN has ever wanted [SEP]", target_index=3),
 	Template("[CLS] $NOM_PRONOUN will become a %s within a year [SEP]", target_index=5),
 	Template("[CLS] $POSS_PRONOUN life dream is to become a %s [SEP]", target_index=8),
+
+	Template("[CLS] $POSS_PRONOUN job is to be a %s [SEP]", target_index=7),
 	Template("[CLS] $NOM_PRONOUN loves to be a %s [SEP]", target_index=6),
+	Template("[CLS] $NOM_PRONOUN studied so hard to become a %s [SEP]", target_index=8),
+	Template("[CLS] I hope $NOM_PRONOUN can be a %s some day [SEP]", target_index=7),
+	Template("[CLS] I think $NOM_PRONOUN will be a good %s [SEP]", target_index=8),
 ]
 
 
@@ -104,7 +110,7 @@ def create_general_dataset(occupations: list[str], samples: int = "all") -> Data
 			.replace('$POSS_PRONOUN', gend.poss_pronoun)
 		# Fixing template for the encoder
 		encoder.set_embedding_template(template=instance_template, word_index=tmpl.target_index)
-		embedding = encoder.embed_word_merged(occ, layers=[12]).detach().numpy()[0]
+		embedding = encoder.embed_word_merged(occ, layers=[12]).detach().cpu().numpy()[0]
 		data_occs.append(occ)
 		data_tmpl.append(tmpl.sentence)
 		data_gend.append(gend)
@@ -144,7 +150,7 @@ def create_general_dataset(occupations: list[str], samples: int = "all") -> Data
 	if samples != "all":
 		dataset = dataset.select(range(samples))
 	dataset = dataset.shuffle(seed=settings.RANDOM_SEED)
-	dataset_dict: DatasetDict = dataset.train_test_split(test_size=0.2)
+	dataset_dict: DatasetDict = dataset.train_test_split(test_size=0.5)
 	return dataset_dict
 
 
@@ -160,7 +166,7 @@ def launch_linear_svc_with_random_general_dataset(occupations: list[str]) -> Non
 	:return: None
 	"""
 	print("Creating dataset...", end='')
-	dataset = create_general_dataset(occupations, samples=1000)
+	dataset = create_general_dataset(occupations, samples=100)
 	train_dataset = dataset["train"]
 	test_dataset = dataset["test"]
 	print("Completed.")

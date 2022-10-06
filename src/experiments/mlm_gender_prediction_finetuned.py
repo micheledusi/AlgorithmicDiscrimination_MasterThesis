@@ -20,15 +20,12 @@ from src.models.templates import TemplatesGroup, Template
 from settings import TOKEN_MASK
 import settings
 
-
 EXPERIMENT_NAME: str = "mlm_gender_prediction_finetuned"
 FOLDER_OUTPUT: str = settings.FOLDER_RESULTS + "/" + EXPERIMENT_NAME
 FOLDER_OUTPUT_IMAGES: str = FOLDER_OUTPUT + "/" + settings.FOLDER_IMAGES
 FOLDER_OUTPUT_TABLES: str = FOLDER_OUTPUT + "/" + settings.FOLDER_TABLES
 
-
 occupation_token = '$ART_ACC'
-
 
 train_group: TemplatesGroup = TemplatesGroup("train_group")
 train_group.templates = [
@@ -95,27 +92,34 @@ def launch() -> None:
 
 	factory = TrainedModelForMaskedLMFactory(model_name=model_name)
 	training_samples: list[int] = [500, 1000, 2000, 5000, 10000, 20000]
-	models: dict[str, ] = {'base': factory.get_model(training_text=None)}
+	models: dict[str,] = {'base': factory.get_model(fine_tuning_text=None)}
 	for samples_number in training_samples:
 		sentences_sampled = random.sample(sentences, samples_number)
 		saved_model_ft_path = settings.FOLDER_SAVED_MODELS + f"/mlm_gender_prediction_finetuned/mlm_gender_prediction_{model_name}_{samples_number}"
-		models[f'fine-tuned-{samples_number}'] = factory.get_model(training_text=sentences_sampled,
+		models[f'fine-tuned-{samples_number}'] = factory.get_model(fine_tuning_text=sentences_sampled,
 		                                                           load_or_save_path=saved_model_ft_path)
 
 	# Eval
-	eval_occs_list: list[str] = OccupationsParser().occupations_list
+	# eval_occs_list: list[str] = OccupationsParser().occupations_list
+	eval_occs_list: list[str] = train_occs_list
 	eval_artoccs_list = list(map(lambda occ: infer_indefinite_article(occ) + ' ' + occ, eval_occs_list))
 
 	# Computing scores for every model
 	scores_by_model: dict[str, np.ndarray] = {}
-	for model_name, model in models.items():
-		scores = compute_scores(model=model, tokenizer=factory.tokenizer,
-		                        templates_group=eval_group, occupations=eval_artoccs_list, occ_token=occupation_token)
+	scores: np.ndarray = np.zeros(shape=(len(models), len(eval_occs_list), len(eval_group.targets)))
+
+	for model_index, (model_name, model) in enumerate(models.items()):
+		model_scores = compute_scores(model=model, tokenizer=factory.tokenizer,
+		                              templates_group=eval_group, occupations=eval_artoccs_list,
+		                              occ_token=occupation_token)
+		# Resulting shape: [# templates, # occupations, # target words]
 
 		# Grouping scores by occupations by averaging the results for different templates
-		scores_grouped_by_occupations = np.mean(scores, axis=0)
+		model_scores = np.mean(model_scores, axis=0)
+		# Obtained shape: [# occupations, # target words]
 		# Saving the grouped scores for the model into the main scores array
-		scores_by_model[model_name] = scores_grouped_by_occupations
+		scores_by_model[model_name] = model_scores
+		scores[model_index] = model_scores
 
 		"""
 		# Plotting graph for the model
@@ -131,15 +135,17 @@ def launch() -> None:
 	# Printing one table for each model
 	print("Writing table on file...")
 	with open(f'{FOLDER_OUTPUT_TABLES}/predictions_models-compared.{settings.OUTPUT_TABLE_FILE_EXTENSION}', 'w') as f:
-		header: list[str] = ['model', 'occupation']
-		header.extend(eval_group.targets)
+		header: list[str] = ['occupation']
+		for target in eval_group.targets:
+			for model_name in models.keys():
+				header.append(f"{target}-{model_name}")
 		print(settings.OUTPUT_TABLE_COL_SEPARATOR.join(header), file=f)
 
-		for model_name in models.keys():
-			scores = scores_by_model[model_name]
-			for j, occ in enumerate(eval_occs_list):
-				row: list[str] = [model_name, occ]
-				row.extend([str(score) for score in scores[j]])
-				print(settings.OUTPUT_TABLE_COL_SEPARATOR.join(row), file=f)
+		for j, occ in enumerate(eval_occs_list):
+			row: list[str] = [occ]
+			for k, target in enumerate(eval_group.targets):
+				for i, model_name in enumerate(models.keys()):
+					row.append(str(scores[i, j, k]))
+			print(settings.OUTPUT_TABLE_COL_SEPARATOR.join(row), file=f)
 	print("Completed.")
 	return

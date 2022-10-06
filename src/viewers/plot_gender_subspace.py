@@ -84,6 +84,37 @@ class GenderSubspacePlotter:
 			plt.close(fig)
 		return
 
+	def write_most_important_features(self, savepath: str) -> None:
+		"""
+		Writes the most important features for each layer, in a table file.
+		:param savepath: The saving path for the produced table
+		:return: None
+		"""
+		with open(savepath, "w") as f:
+			data = self.model.features_importance
+			num_layers, num_features = data.shape
+			# Dimensions: [# layers, # features]
+			header: list[str] = ["id"]
+			for label in self.__layers_labels:
+				header.extend([f"layer-{label}", f"rank-{label}"])
+			print(settings.OUTPUT_TABLE_COL_SEPARATOR.join(header), file=f)
+
+			# Computing the ranking by sorting the importance
+			orders = np.argsort(data, axis=1)    # This should give an array of  [# layers, # features]
+			ranks = np.ndarray(shape=data.shape)
+			for i in range(num_layers):
+				ranks[i] = [range(num_features).index(o) for o in orders[i]]
+
+			# Writing data
+			for j in range(num_features):
+				row: list[str] = [str(j)]
+				for i in range(num_layers):
+					row.append(str(data[i, j]))
+				for i in range(num_layers):
+					row.append(str(ranks[i, j]))
+				print(settings.OUTPUT_TABLE_COL_SEPARATOR.join(row), file=f)
+		return
+
 	def plot_most_important_features(self, savepath: str, highlights: int = 10, annotations: int = 2) -> None:
 		"""
 		Plots the stem graphs for the SVC in the GenderSubspaceModel. With this function, the main components of the
@@ -130,6 +161,7 @@ class GenderSubspacePlotter:
 		for layer, label in zip(self.__layers, self.__layers_labels):
 
 			clf = self.model.classifiers[layer]
+			plt.figure(figsize=(10, 8), dpi=200)
 			tree.plot_tree(clf)
 			plt.suptitle("Layer " + label)
 			plt.savefig(savepath.replace(settings.OUTPUT_IMAGE_FILE_EXTENSION, f"{label}.{settings.OUTPUT_IMAGE_FILE_EXTENSION}"))

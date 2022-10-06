@@ -101,17 +101,16 @@ if __name__ == "__main__":
 
 	if FORCE_REWRITE or not os.path.isfile(DEFAULT_ROOT_PATH + '/' + SUBDIR_DATASETS + 'gendered_words.pkl'):
 		encoder: WordEncoder = WordEncoder()
-		words_list: list[str] = []
-		genders_list: list[Gender] = []
-		embeddings_list: list[torch.Tensor] = []
-		# Building lists
-		for g, words in gendered_words.items():
-			for w in words:
-				words_list.append(w)
-				genders_list.append(g)
-				embeddings_list.append(encoder.embed_word_merged(w))
-		# Aggregating lists into a dataset
-		gendered_dataset = Dataset.from_dict({'word': words_list, 'gender': genders_list, 'embedding': embeddings_list})
+
+		gendered_dataset = jobs_parser.get_words_dataset(jobs_parser.DATASET_GENDERED_WORDS)
+
+		def compute_embedding(sample):
+			assert 'word' in sample
+			assert 'gender' in sample
+			sample['embedding'] = encoder.embed_word_merged(sample['word'])
+			return sample
+
+		gendered_dataset = gendered_dataset.map(function=compute_embedding)
 
 		# Serializing dataset
 		print("Dumping dataset...", end="")
@@ -125,5 +124,3 @@ if __name__ == "__main__":
 		print("Features of dataset: ", ds.features)
 
 	pass
-
-

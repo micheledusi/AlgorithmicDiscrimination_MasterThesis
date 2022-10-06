@@ -96,7 +96,7 @@ class _AbstractTrainedModelFactory(ABC, Generic[M]):
 				print(f"Unable to find the model <{self.model_name}> locally in path: {load_or_save_path} - A new model will be trained from scratch.")
 
 		# Instancing a new model from scratch
-		model = self.auto_model_class.from_pretrained(self.model_name, kwargs)
+		model = self.auto_model_class.from_pretrained(self.model_name, **kwargs)
 		assert model is not None
 
 		# If there are training data, the model is trained on the training_text
@@ -123,7 +123,7 @@ class _AbstractTrainedModelFactory(ABC, Generic[M]):
 		"""
 		return model
 
-	def __tokenize_function(self, records):
+	def _tokenize_function(self, records):
 		"""
 		This function tokenizes the records of the dataset.
 		:param records: The records of a Dataset.
@@ -144,7 +144,7 @@ class TrainedModelFactory(_AbstractTrainedModelFactory[AutoModel]):
 	def get_model(self, fine_tuning_text: list[str] | None = None, load_or_save_path: str = None, **kwargs) -> M:
 		# Since the base Transformer model it's used as an encoder,
 		# this method asserts the model can return the hidden states.
-		return super().get_model(fine_tuning_text, load_or_save_path, output_hidden_states=True, kwargs=kwargs)
+		return super().get_model(fine_tuning_text, load_or_save_path, output_hidden_states=True, **kwargs)
 
 	def train_model(self, model: AutoModel, texts: list[str], output_dir: str = FOLDER_CHECKPOINTS) -> AutoModel:
 		raise ResourceWarning("For now, it's not possible to train a basic model with 'TrainedModelFactory'. "
@@ -212,7 +212,7 @@ class TrainedModelForMaskedLMFactory(_AbstractTrainedModelFactory[AutoModelForMa
 
 		# Tokenizing the whole dataset
 		tokenized_dataset = dataset.map(
-			function=self.__tokenize_function,
+			function=self._tokenize_function,
 			batched=self.batched,
 			num_proc=self.num_proc,
 			remove_columns=[self._texts_feature_name]
@@ -220,13 +220,13 @@ class TrainedModelForMaskedLMFactory(_AbstractTrainedModelFactory[AutoModelForMa
 
 		# Dividing into chunks of equal size (and discarding the last one)
 		chunked_dataset = tokenized_dataset.map(
-			function=self.__chunk_function,
+			function=self._chunk_function,
 			batched=self.batched,
 			num_proc=self.num_proc,
 		)
 		return chunked_dataset
 
-	def __chunk_function(self, examples):
+	def _chunk_function(self, examples):
 		concatenated_examples = {k: sum(examples[k], []) for k in examples.keys()}
 
 		total_length = len(concatenated_examples[list(examples.keys())[0]])

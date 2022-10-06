@@ -11,6 +11,7 @@ DATASET_JOBS: str = settings.FOLDER_DATA + "/one_word_occupations.txt"
 DATASET_WINOGENDER_OCCUPATIONS: str = settings.FOLDER_DATA + "/WinoGender/occupations_stats.csv"
 DATASET_JNEIDEL_ONEWORD_OCCUPATIONS: str = settings.FOLDER_DATA + "/jneidel/oneword-job-titles.txt"
 DATASET_JNEIDEL_OCCUPATIONS: str = settings.FOLDER_DATA + "/jneidel/job-titles.txt"
+DATASET_GENDERED_WORDS: str = settings.FOLDER_DATA + "/gendered_words.tsv"
 
 DEFAULT_FILEPATH: str = DATASET_JOBS
 
@@ -22,7 +23,12 @@ def get_words_list(filepath: str = DEFAULT_FILEPATH) -> list[str]:
 
 
 def get_words_dataset(filepath: str = DEFAULT_FILEPATH) -> Dataset:
-	return Dataset.from_text(filepath)
+	if filepath.endswith("tsv"):
+		return Dataset.from_csv(filepath, sep="\t")
+	elif filepath.endswith("csv"):
+		return Dataset.from_csv(filepath, sep=",")
+	else:
+		return Dataset.from_text(filepath)
 
 
 def get_words_split_dataset(filepath: str = DEFAULT_FILEPATH) -> DatasetDict:

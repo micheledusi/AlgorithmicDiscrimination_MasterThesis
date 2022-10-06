@@ -85,6 +85,15 @@ class BaseDimensionalityReducer(ABC):
 	def _reduction_transformation(self, embeddings: np.ndarray) -> np.ndarray:
 		pass
 
+	@abstractmethod
+	def get_transformation_matrix(self) -> list[np.ndarray] | np.ndarray:
+		"""
+		:return: The transformation matrix (if possible) representing the linear reduction of dimensionality.
+		If the returned value is a list, each item is the transformation matrix of the corresponding layer of the embeddings.
+		Otherwise, if the returned value is a single matrix (np.ndarray), the matrix is valid for all the layers.
+		"""
+		pass
+
 
 class SelectorReducer(BaseDimensionalityReducer):
 	"""
@@ -97,6 +106,12 @@ class SelectorReducer(BaseDimensionalityReducer):
 
 	def _reduction_transformation(self, embeddings: np.ndarray) -> np.ndarray:
 		return np.take_along_axis(embeddings, indices=self._selected_features, axis=-1)
+
+	def get_transformation_matrix(self) -> list[np.ndarray] | np.ndarray:
+		matrix: np.ndarray = np.zeros(shape=(self.m, self.n), dtype=np.uint8)
+		for i, feature in enumerate(self._selected_features):
+			matrix[feature, i] = 1
+		return matrix
 
 
 class MatrixReducer(BaseDimensionalityReducer):
@@ -112,6 +127,9 @@ class MatrixReducer(BaseDimensionalityReducer):
 	def _reduction_transformation(self, embeddings: np.ndarray) -> np.ndarray:
 		return np.matmul(embeddings, self.__matrix)
 
+	def get_transformation_matrix(self) -> list[np.ndarray] | np.ndarray:
+		return self.__matrix
+
 
 class PCAReducer(BaseDimensionalityReducer):
 	"""
@@ -120,14 +138,23 @@ class PCAReducer(BaseDimensionalityReducer):
 	For a "trained" PCA, please use 'TrainedPCAReducer'.
 	"""
 
+	def __init__(self, from_m: int, to_n: int):
+		super().__init__(from_m, to_n)
+		self.__last_pca_list: list[PCA] = None
+
 	def _reduction_transformation(self, embeddings: np.ndarray) -> np.ndarray:
 		it = LayersIterator(embeddings)
 		results = np.zeros(shape=(it.num_samples, it.num_layers, self.n))
+		self.__last_pca_list = []
 		for layer_emb in it:
 			pca = PCA(n_components=self.n)
 			pca.fit(layer_emb)
 			results[:, it.current_layer_index] = pca.transform(layer_emb)
+			self.__last_pca_list.append(pca)
 		return results
+
+	def get_transformation_matrix(self) -> list[np.ndarray] | np.ndarray:
+		return [pca.transform(np.identity(self.m)) for pca in self.__last_pca_list]
 
 
 class TrainedPCAReducer(BaseDimensionalityReducer):
@@ -151,6 +178,9 @@ class TrainedPCAReducer(BaseDimensionalityReducer):
 		for pca, layer_emb in zip(self.__pca_list, it):
 			results[:, it.current_layer_index] = pca.transform(layer_emb)
 		return results
+
+	def get_transformation_matrix(self) -> list[np.ndarray] | np.ndarray:
+		return [pca.transform(np.identity(self.m)) for pca in self.__pca_list]
 
 
 class GenderClassifierReducer(BaseDimensionalityReducer):
@@ -178,6 +208,15 @@ class GenderClassifierReducer(BaseDimensionalityReducer):
 			results[:, it.current_layer_index] = layer_emb[:, indices]
 		return results
 
+	def get_transformation_matrix(self) -> list[np.ndarray] | np.ndarray:
+		matrices: list[np.ndarray] = []
+		for indices in self.__selected_features:
+			matrix: np.ndarray = np.zeros(shape=(self.m, self.n), dtype=np.uint8)
+			for i, feature in enumerate(indices):
+				matrix[feature, i] = 1
+			matrices.append(matrix)
+		return matrices
+
 
 class PipelineReducer(BaseDimensionalityReducer):
 	"""
@@ -198,5 +237,36 @@ class PipelineReducer(BaseDimensionalityReducer):
 			results = red.reduce(results)
 		return results
 
+	def get_transformation_matrix(self) -> list[np.ndarray] | np.ndarray:
+		matrix_prev = np.identity(self.m)
+		for reducer in self.__reducers:
+			matrix_curr = reducer.get_transformation_matrix()
 
+			if isinstance(matrix_prev, list):
+
+				if isinstance(matrix_curr, list):
+					matrix_aux = []
+					for m_prev, m_curr in zip(matrix_prev, matrix_curr):
+						matrix_aux.append(np.matmul(m_prev, m_curr))
+					matrix_prev = matrix_aux
+
+				elif isinstance(matrix_curr, np.ndarray):
+					matrix_aux = []
+					for m_prev in matrix_prev:
+						matrix_aux.append(np.matmul(m_prev, matrix_curr))
+					matrix_prev = matrix_aux
+
+			elif isinstance(matrix_prev, np.ndarray):
+
+				if isinstance(matrix_curr, list):
+					matrix_aux = []
+					for m_curr in matrix_curr:
+						matrix_aux.append(np.matmul(matrix_prev, m_curr))
+					matrix_prev = matrix_aux
+
+				elif isinstance(matrix_curr, np.ndarray):
+					matrix_aux = np.matmul(matrix_prev, matrix_curr)
+					matrix_prev = matrix_aux
+
+		return matrix_prev
 
