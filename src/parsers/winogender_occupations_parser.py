@@ -7,8 +7,7 @@ import csv
 import sys
 import settings
 
-
-OCCUPATIONS_FILE = settings.FOLDER_DATA + "/WinoGender/occupation_stats.tsv"
+OCCUPATIONS_FILE = settings.FOLDER_DATA + "/WinoGender/occupations.tsv"
 
 STAT_BERGSMA = "bergsma"
 STAT_BLS = "bls"
@@ -17,7 +16,7 @@ STAT_BLS = "bls"
 class OccupationsParser:
 	"""
 	This class embeds the main useful methods to extract a list of occupations from a TSV file.
-	It's based on the <occupation_stats.tsv> file from the WinoGender dataset, containing a list of occupations
+	It's based on the <occupations.tsv> file from the WinoGender dataset, containing a list of occupations
 	and their percentage of female workers (in 2015).
 	"""
 
@@ -58,6 +57,7 @@ class OccupationsParser:
 	                                  stat_name: str = STAT_BLS,
 	                                  female_percentage: str = "highest") -> list[tuple[str, float]]:
 		"""
+		:param female_percentage: The sorting method
 		:param stat_name: The name of the used statistic. Default is "bergsma".
 		:param max_length: The maximum number of elements in the returned list.
 		:return: The dictionary with occupations as keys and percentage as values, sorted by values.
@@ -69,7 +69,7 @@ class OccupationsParser:
 			occs_dict = sorted(occs_dict.items(), key=lambda item: item[1], reverse=False)
 		else:
 			raise Exception("Please use <highest> or <lowest> as values for the 'female_percentage' "
-							"attribute to sort the occupations correctly.")
+			                "attribute to sort the occupations correctly.")
 		# If the users select only a sub-part of the occupation
 		if max_length != -1 and len(occs_dict) > max_length:
 			occs_dict = occs_dict[:max_length]

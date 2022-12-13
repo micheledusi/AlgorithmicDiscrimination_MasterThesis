@@ -1,0 +1,8 @@
+template,connotation
+"[WORD]","empty"
+"I love [WORD], I would eat it every day.","positive"
+"This [WORD] is amazing!","positive"
+"Yesterday, I ate a delicious [WORD] in that restaurant.","positive"
+"This [WORD] is not very good...","negative"
+"Honestly, I don't like [WORD] very much.","negative"
+"This [WORD] is really bad...","negative"

@@ -8,7 +8,7 @@ from datasets import Dataset, DatasetDict
 import settings
 
 DATASET_JOBS: str = settings.FOLDER_DATA + "/one_word_occupations.txt"
-DATASET_WINOGENDER_OCCUPATIONS: str = settings.FOLDER_DATA + "/WinoGender/occupations_stats.csv"
+DATASET_WINOGENDER_OCCUPATIONS: str = settings.FOLDER_DATA + "/WinoGender/occupations.tsv"
 DATASET_JNEIDEL_ONEWORD_OCCUPATIONS: str = settings.FOLDER_DATA + "/jneidel/oneword-job-titles.txt"
 DATASET_JNEIDEL_OCCUPATIONS: str = settings.FOLDER_DATA + "/jneidel/job-titles.txt"
 DATASET_GENDERED_WORDS: str = settings.FOLDER_DATA + "/gendered_words.tsv"

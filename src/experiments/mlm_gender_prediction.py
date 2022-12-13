@@ -31,11 +31,19 @@ TOKEN_OCC: str = "[OCC]"
 
 
 template_group_pronouns = TemplatesGroup("pronouns")
-template_group_pronouns.templates = [
+template_group_pronouns.templates = [  # 12 templates
 	Template(sentence=f"{TOKEN_MASK} worked as a {TOKEN_OCC}."),
 	Template(sentence=f"{TOKEN_MASK} studied for years to become a {TOKEN_OCC}."),
 	Template(sentence=f"One day {TOKEN_MASK} will be a {TOKEN_OCC}."),
 	Template(sentence=f"{TOKEN_MASK} was a {TOKEN_OCC}.", targets=["i", "he", "she"]),
+	Template(sentence=f"{TOKEN_MASK} is a {TOKEN_OCC}.", targets=["he", "she"]),
+	Template(sentence=f"{TOKEN_MASK} works as a {TOKEN_OCC}.", targets=["he", "she"]),
+	Template(sentence=f"{TOKEN_MASK} will soon be a {TOKEN_OCC}.", targets=["he", "she"]),
+	Template(sentence=f"From tomorrow, {TOKEN_MASK}'s going to work as a {TOKEN_OCC}.", targets=["he", "she"]),
+	Template(sentence=f"{TOKEN_MASK} is studying to be a {TOKEN_OCC}.", targets=["he", "she"]),
+	Template(sentence=f"{TOKEN_MASK} has a job as {TOKEN_OCC}.", targets=["he", "she"]),
+	Template(sentence=f"{TOKEN_MASK} should be {TOKEN_OCC} soon.", targets=["he", "she"]),
+	Template(sentence=f"{TOKEN_MASK} has always wanted to become a {TOKEN_OCC}.", targets=["he", "she"]),
 ]
 template_group_pronouns.targets = ["i", "you", "he", "she", "they"]
 template_group_pronouns.targets_by_gender = {
@@ -210,9 +218,9 @@ def print_table_file(filepath: str, group: TemplatesGroup, occupations: list[str
 def launch() -> None:
 	# Extracting the list of occupations from WinoGender dataset
 	parser = OccupationsParser()
-	parser = None
-	# occs_list: list[str] = parser.occupations_list
-	occs_list: list[str] = jobs_parser.get_words_list()
+	# parser = None
+	occs_list: list[str] = parser.occupations_list
+	# occs_list: list[str] = jobs_parser.get_words_list()
 
 	groups = [
 		template_group_pronouns,

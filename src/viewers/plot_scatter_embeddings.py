@@ -11,6 +11,16 @@ import typing
 from datetime import datetime
 from pathlib import Path
 from torch import Tensor, pca_lowrank, squeeze
+
+import matplotlib as matplotlib
+import PyQt5
+
+matplotlib.use('pgf')
+matplotlib.rc('pgf', texsystem='pdflatex')  # from running latex -v
+matplotlib.use('Qt5Agg')
+# preamble = matplotlib.rcParams.setdefault('pgf.preamble', [])
+# preamble.append(r'\usepackage{color}')
+
 import matplotlib.pyplot as plt
 from matplotlib.colors import Normalize, Colormap
 import settings
@@ -72,7 +82,7 @@ class EmbeddingsScatterPlotter:
 			self.__labels = None
 		elif self.count() != len(labels):
 			# The number of labels MUST be equals to the number of embeddings
-			raise RuntimeError("Labels number is different from embeddings count")
+			raise RuntimeError(f"Labels number ({len(labels)}) is different from embeddings count ({self.count()})")
 		self.__labels = labels
 
 	@property
@@ -200,7 +210,7 @@ class EmbeddingsScatterPlotter:
 
 				if self.labels is not None:
 					label = self.labels[i]
-					ax.annotate(label, xy=(xh[-1], yh[-1]), xytext=(1, 1), textcoords="offset points")
+					ax.annotate(label, xy=(xh[-1], yh[-1]), xytext=(1, 1), color="gray", textcoords="offset points")
 
 		# Allowing the visualization
 		self.__ready_to_show = True
@@ -334,6 +344,9 @@ class EmbeddingsScatterPlotter:
 				if self.colors is not None:
 					record.append(str(self.colors[i]))
 				if self.sizes is not None:
-					record.append(str(self.sizes[i]))
+					if isinstance(self.sizes, list):
+						record.append(str(self.sizes[i]))
+					else:
+						record.append(str(self.sizes))
 				print(settings.OUTPUT_TABLE_COL_SEPARATOR.join(record), file=f)
 		return

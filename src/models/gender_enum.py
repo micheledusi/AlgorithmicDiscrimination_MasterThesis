@@ -16,9 +16,9 @@ class Gender(IntEnum):
 	@property
 	def color(self) -> str:
 		genders_colors: dict[Gender, str] = {
-			Gender.NEUTER: "#E7C662",
-			Gender.MALE: "#779be7",
-			Gender.FEMALE: "#ef798a",
+			Gender.NEUTER: "#e041c6",
+			Gender.MALE: "#4287f5",
+			Gender.FEMALE: "#eb4034",
 		}
 		return genders_colors[self]
 

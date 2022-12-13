@@ -1,0 +1,6 @@
+template,connotation
+"[WORD]","empty"
+"When I grow up, I want to be [ART] [WORD].","positive"
+"The [WORD] is a fantastic WORD!","positive"
+"The [WORD] is a terrible WORD!","negative"
+"I don't like being just [ART] [WORD]...","negative"

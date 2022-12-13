@@ -6,7 +6,7 @@
 # Inferring the article for english names.
 
 
-AN_PREFIXES: tuple[str, ...] = ('a', 'e', 'i', 'o')
+AN_PREFIXES: tuple[str, ...] = ('a', 'e', 'i', 'o', "un")
 A_PREFIXES: tuple[str, ...] = ('ow', 'uni', 'eu')
 
 
