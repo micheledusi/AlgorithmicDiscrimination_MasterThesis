@@ -8,6 +8,7 @@ import itertools
 from datasets import Dataset
 import torch
 from kmeans_pytorch import kmeans
+from sklearn.metrics.cluster import normalized_mutual_info_score
 
 from src.models.word_encoder import WordEncoder
 from src.parsers.article_inference import infer_indefinite_article
@@ -32,6 +33,10 @@ TOKEN_ARTICLE_IN_TMPL: str = "[ART]"
 TOKEN_WORD_IN_TMPL: str = "[WORD]"
 TOKEN_WORD_TO_EMBED: str = "%s"
 TOKEN_AUX: str = "xx"  # A sequence of chars that (1) is NOT tokenized by BERT and (2) does NOT appear in sentences
+
+# Defining the reference template
+EMPTY_TEMPLATE: str = settings.TOKEN_CLS + " " + TOKEN_WORD_IN_TMPL + " " + settings.TOKEN_SEP
+BENCHMARK_TEMPLATE: str = EMPTY_TEMPLATE
 
 
 def find_token_index_of_word(tokenizer, word: str, template: str) -> int:
@@ -67,6 +72,20 @@ def cluster_samples(samples: torch.Tensor, num_clusters: int) -> torch.Tensor:
 		device=torch.device('cuda:0')
 	)
 	return cluster_ids_x
+
+
+def compute_cluster_mutual_information(db: Dataset, label_column: str, cluster_id_column: str) -> float:
+	"""
+	Given a Dataset, it considers two column as the original label and the labels given by the clustering.
+	Then, it computes a metric of "mutual information", scoring the clustering quality between 0.0 and 1.0.
+	Both columns must contain integers as labels and ids.
+
+	:param db: The given dataset
+	:param label_column: The column of the original labels (as integers)
+	:param cluster_id_column: The column of the clustering labels (as integers)
+	:return:
+	"""
+	return normalized_mutual_info_score(labels_true=db[label_column], labels_pred=db[cluster_id_column])
 
 
 def launch() -> None:
@@ -144,9 +163,18 @@ def launch() -> None:
 	results_db = results_db.map(function=augment_db_row)
 	results_db = results_db.add_column(name="template_cluster_label", column=clusters_ids_templates.data.numpy())
 	results_db = results_db.add_column(name="word_cluster_label", column=clusters_ids_words.data.numpy())
-	print(results_db)
 	# Logging
 	results_db.to_csv(FOLDER_OUTPUT_TABLES + "/out-" + EXPERIMENT_DOMAIN + "." + settings.OUTPUT_TABLE_FILE_EXTENSION)
+
+	# Computing purity measures
+	purity_score_templates: float = compute_cluster_mutual_information(results_db, "template_id", "template_cluster_label")
+	purity_score_words: float = compute_cluster_mutual_information(results_db, "word_id", "word_cluster_label")
+	print(f"Cluster mutual information w.r.t {templates_count} templates: ", purity_score_templates)
+	print(f"Cluster mutual information w.r.t {words_count} words: ", purity_score_words)
+
+	# Mixed scores: evaluating clustering over N groups according to M labels
+	# print(compute_cluster_mutual_information(results_db, "template_id", "word_cluster_label"))
+	# print(compute_cluster_mutual_information(results_db, "word_id", "template_cluster_label"))
 
 	# Data visualization
 

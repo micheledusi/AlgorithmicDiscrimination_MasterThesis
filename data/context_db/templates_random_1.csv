@@ -1,0 +1,11 @@
+template,connotation
+"I really like [WORD].","positive"
+"What does [WORD] mean?","positive"
+"How could you live without [WORD]?","positive"
+"You should really try [WORD], you'll love it!","positive"
+"[WORD] is everything I need!","positive"
+"I don't like [WORD].","negative"
+"They hate [WORD].","negative"
+"[WORD] is not a good thing.","negative"
+"You should not try [WORD], you'll hate it.","negative"
+"[WORD] is the worst.","negative"
