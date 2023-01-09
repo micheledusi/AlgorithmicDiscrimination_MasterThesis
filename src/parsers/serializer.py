@@ -46,6 +46,10 @@ class Serializer:
 		with open(filepath, 'rb') as f:
 			return pickle.load(file=f)
 
+	def has(self, file_id: str) -> bool:
+		filepath: str = f"{self.__root}/{file_id}.{settings.OUTPUT_SERIALIZED_FILE_EXTENSION}"
+		return os.path.exists(filepath)
+
 	def save_embeddings(self, embeddings: np.ndarray | torch.Tensor, file_id: str) -> None:
 		self.save(obj=embeddings, file_id=SUBDIR_EMBEDDINGS + file_id)
 
@@ -73,6 +77,12 @@ class Serializer:
 		dataset = self.load(file_id=SUBDIR_DATASETS + file_id)
 		assert isinstance(dataset, Dataset | DatasetDict)
 		return dataset
+
+	def has_embeddings(self, file_id: str) -> bool:
+		return self.has(file_id=SUBDIR_EMBEDDINGS + file_id)
+
+	def has_dataset(self, file_id: str) -> bool:
+		return self.has(file_id=SUBDIR_DATASETS + file_id)
 
 
 FORCE_REWRITE: bool = False
