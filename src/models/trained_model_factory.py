@@ -13,7 +13,8 @@ import pandas as pd
 
 import transformers
 from datasets import DatasetDict, Dataset
-from transformers import AutoTokenizer, AutoModelForMaskedLM, DataCollatorForLanguageModeling, AutoModel, PreTrainedTokenizerBase
+from transformers import AutoTokenizer, AutoModelForMaskedLM, DataCollatorForLanguageModeling, AutoModel, \
+	PreTrainedTokenizerBase, PreTrainedTokenizerFast, PreTrainedTokenizer
 from transformers import TrainingArguments, Trainer
 from transformers.models.auto.auto_factory import _BaseAutoModelClass
 
@@ -55,7 +56,7 @@ class _AbstractTrainedModelFactory(ABC, Generic[M]):
 		self.__tokenizer: PreTrainedTokenizerBase = AutoTokenizer.from_pretrained(self.__model_name)
 
 	@property
-	def tokenizer(self) -> PreTrainedTokenizerBase:
+	def tokenizer(self) -> PreTrainedTokenizerBase | PreTrainedTokenizer | PreTrainedTokenizerFast:
 		return self.__tokenizer
 
 	@property
