@@ -27,16 +27,16 @@ FOLDER_INPUT_DATA: str = settings.FOLDER_DATA + "/context_db"
 # - The domain is the category of the words and templates. Ideally, each word-list has at least one domain-list, and vice-versa
 # - The ID, to distinguish different lists within the same domain (e.g. job_1 and job_2)
 EXPERIMENT_DOMAIN = "disciplines"
-EXPERIMENT_WORDS_FILE = FOLDER_INPUT_DATA + "/" + "words_" + EXPERIMENT_DOMAIN + "_1.csv"
-EXPERIMENT_TEMPLATES_FILE = FOLDER_INPUT_DATA + "/" + "templates_" + EXPERIMENT_DOMAIN + "_1.csv"
+WORDS_FILE_ID: int = 1
+TEMPLATES_FILE_ID: int = 1
+EXPERIMENT_WORDS_FILE = FOLDER_INPUT_DATA + f"/words/{EXPERIMENT_DOMAIN}_w{WORDS_FILE_ID}.csv"
+EXPERIMENT_TEMPLATES_FILE = FOLDER_INPUT_DATA + f"/embs_templates/{EXPERIMENT_DOMAIN}_t{TEMPLATES_FILE_ID}.csv"
 
-TOKEN_ARTICLE_IN_TMPL: str = "[ART]"
-TOKEN_WORD_IN_TMPL: str = "[WORD]"
 TOKEN_WORD_TO_EMBED: str = "%s"
 TOKEN_AUX: str = "xx"  # A sequence of chars that (1) is NOT tokenized by BERT and (2) does NOT appear in sentences
 
 # Defining the reference template
-EMPTY_TEMPLATE: str = settings.TOKEN_CLS + " " + TOKEN_WORD_IN_TMPL + " " + settings.TOKEN_SEP
+EMPTY_TEMPLATE: str = settings.TOKEN_CLS + " " + settings.TOKEN_WORD + " " + settings.TOKEN_SEP
 BENCHMARK_TEMPLATE: str = EMPTY_TEMPLATE
 
 
@@ -93,17 +93,17 @@ def launch() -> None:
 	for template in templates_list["template"]:
 		# print("Template: ", template)
 		# Preparing template
-		template = template.replace(TOKEN_WORD_IN_TMPL, TOKEN_WORD_TO_EMBED)
+		template = template.replace(settings.TOKEN_WORD, TOKEN_WORD_TO_EMBED)
 		template = settings.TOKEN_CLS + " " + template + " " + settings.TOKEN_SEP
 
 		# Find index of word "%s"
 		index: int = find_token_index_of_word(encoder.tokenizer, TOKEN_WORD_TO_EMBED,
-		                                      template.replace(TOKEN_ARTICLE_IN_TMPL, "y"))
+		                                      template.replace(settings.TOKEN_ARTICLE, "y"))
 		tmpl_embs_list: list[torch.Tensor] = []
 
 		for word in words_list["word"]:
 			article: str = infer_indefinite_article(word)
-			encoder.set_embedding_template(template.replace(TOKEN_ARTICLE_IN_TMPL, article), word_index=index)
+			encoder.set_embedding_template(template.replace(settings.TOKEN_ARTICLE, article), word_index=index)
 
 			# Computing the embedding of size: [#layers, #features]
 			embedding: torch.Tensor = encoder.embed_word_merged(word, layers=[12])

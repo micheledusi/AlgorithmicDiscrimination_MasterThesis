@@ -1,5 +1,4 @@
 template,connotation
-"[WORD]","empty"
 "When I grow up, I want to be [ART] [WORD].","positive"
 "I'd like to become [ART] [WORD].","positive"
 "You studied really hard, you deserve to be [ART] [WORD]","positive"
@@ -11,6 +10,6 @@ template,connotation
 "I don't think you'll be a good [WORD]...","negative"
 "He's [ART] [WORD], but he's not very happy of this.","negative"
 "She's [ART] [WORD], but she's not very happy about that.","negative"
-"If you fail,you'll end up being [ART] [WORD].","negative"
+"If you fail, you'll end up being [ART] [WORD].","negative"
 "I don't like being just [ART] [WORD]...","negative"
 "I don't like the [WORD] that works near me!","negative"
