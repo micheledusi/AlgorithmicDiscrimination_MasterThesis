@@ -7,9 +7,10 @@ import itertools
 
 from datasets import Dataset
 import torch
-from kmeans_pytorch import kmeans
 from sklearn.metrics.cluster import normalized_mutual_info_score
 
+from src.models.embeddings_clusterer import KMeansClusteringAlgorithm, ClusteringAlgorithm, \
+	HierarchicalClusteringAlgorithm
 from src.models.word_encoder import WordEncoder
 from src.parsers.article_inference import infer_indefinite_article
 from src.viewers.plot_scatter_embeddings import EmbeddingsScatterPlotter
@@ -25,7 +26,7 @@ FOLDER_INPUT_DATA: str = settings.FOLDER_DATA + "/context_db"
 # - The type is either "words" or "templates", according to the csv content
 # - The domain is the category of the words and templates. Ideally, each word-list has at least one domain-list, and vice-versa
 # - The ID, to distinguish different lists within the same domain (e.g. job_1 and job_2)
-EXPERIMENT_DOMAIN = "food"
+EXPERIMENT_DOMAIN = "disciplines"
 EXPERIMENT_WORDS_FILE = FOLDER_INPUT_DATA + "/" + "words_" + EXPERIMENT_DOMAIN + "_1.csv"
 EXPERIMENT_TEMPLATES_FILE = FOLDER_INPUT_DATA + "/" + "templates_" + EXPERIMENT_DOMAIN + "_1.csv"
 
@@ -56,22 +57,6 @@ def find_token_index_of_word(tokenizer, word: str, template: str) -> int:
 	index: int = tok_template.index(TOKEN_AUX)
 	# print(f' => index: {index}')
 	return index
-
-
-def cluster_samples(samples: torch.Tensor, num_clusters: int) -> torch.Tensor:
-	"""
-	Runs a clustering algorithm over the input samples, looking for a specific number of clusters.
-
-	:param samples: The samples to cluster, i.e. a Tensor of dimensions [#samples, #features]
-	:param num_clusters: The number of clusters to look for
-	:return: An array indicating, for each sample, the ID of the cluster it belongs to.
-	"""
-	cluster_ids_x, cluster_centers = kmeans(
-		X=samples, num_clusters=num_clusters,
-		distance='cosine',  # Can be 'euclidean' (default) or 'cosine'
-		device=torch.device('cuda:0')
-	)
-	return cluster_ids_x
 
 
 def compute_cluster_mutual_information(db: Dataset, label_column: str, cluster_id_column: str) -> float:
@@ -106,7 +91,7 @@ def launch() -> None:
 	embs_list: list[torch.Tensor] = []
 
 	for template in templates_list["template"]:
-		print("Template: ", template)
+		# print("Template: ", template)
 		# Preparing template
 		template = template.replace(TOKEN_WORD_IN_TMPL, TOKEN_WORD_TO_EMBED)
 		template = settings.TOKEN_CLS + " " + template + " " + settings.TOKEN_SEP
@@ -142,9 +127,18 @@ def launch() -> None:
 	embs_inputs = list(itertools.product(range(templates_count), range(
 		words_count)))  # Obtaining a list of input pairs of integers [template_index, word_index]
 
-	# Clustering data
-	clusters_ids_templates: torch.Tensor = cluster_samples(embs, num_clusters=templates_count)
-	clusters_ids_words: torch.Tensor = cluster_samples(embs, num_clusters=words_count)
+	# Clustering algorithms
+	# Defining the list
+	clustering_algorithms: list[ClusteringAlgorithm] = [
+		KMeansClusteringAlgorithm(num_clusters=templates_count, distance='cosine'),
+		KMeansClusteringAlgorithm(num_clusters=words_count, distance='cosine'),
+		HierarchicalClusteringAlgorithm(num_clusters=templates_count, distance='cosine', linkage='average'),
+		HierarchicalClusteringAlgorithm(num_clusters=words_count, distance='cosine', linkage='average'),
+		HierarchicalClusteringAlgorithm(num_clusters=templates_count, distance='euclidean', linkage='ward'),
+		HierarchicalClusteringAlgorithm(num_clusters=words_count, distance='euclidean', linkage='ward'),
+	]
+	# Applying all the clustering algorithm to the embeddings "embs"
+	clusters_ids: dict[str, torch.Tensor] = {str(algo): algo(embs) for (algo) in clustering_algorithms}
 
 	# Data Logging
 
@@ -161,21 +155,26 @@ def launch() -> None:
 		return sample
 
 	results_db = results_db.map(function=augment_db_row)
-	results_db = results_db.add_column(name="template_cluster_label", column=clusters_ids_templates.data.numpy())
-	results_db = results_db.add_column(name="word_cluster_label", column=clusters_ids_words.data.numpy())
-	# Logging
+	for (algo_name, clusters_labels) in clusters_ids.items():
+		column_name: str = "label-" + algo_name
+		# Adding columns to the database, one for each clustering algorithm
+		results_db = results_db.add_column(name=column_name, column=clusters_labels.data.numpy())
+
+		# Computing purity measures
+		purity_score_templates: float = compute_cluster_mutual_information(results_db, "template_id", column_name)
+		purity_score_words: float = compute_cluster_mutual_information(results_db, "word_id", column_name)
+
+		# Logging to stdout
+		print(f"\nClustering with algorithm: {algo_name}")
+		print(f"\tNumber of resulting clusters: ", len(set(clusters_labels.data.numpy())))
+		print(f"\tCluster similarity w.r.t {templates_count} templates: \t", purity_score_templates)
+		print(f"\tCluster similarity w.r.t {words_count} words:     \t", purity_score_words)
+
+	# Logging results database to CSV
 	results_db.to_csv(FOLDER_OUTPUT_TABLES + "/out-" + EXPERIMENT_DOMAIN + "." + settings.OUTPUT_TABLE_FILE_EXTENSION)
 
-	# Computing purity measures
-	purity_score_templates: float = compute_cluster_mutual_information(results_db, "template_id", "template_cluster_label")
-	purity_score_words: float = compute_cluster_mutual_information(results_db, "word_id", "word_cluster_label")
-	print(f"Cluster mutual information w.r.t {templates_count} templates: ", purity_score_templates)
-	print(f"Cluster mutual information w.r.t {words_count} words: ", purity_score_words)
-
-	# Mixed scores: evaluating clustering over N groups according to M labels
-	# print(compute_cluster_mutual_information(results_db, "template_id", "word_cluster_label"))
-	# print(compute_cluster_mutual_information(results_db, "word_id", "template_cluster_label"))
-
+	"""
+	
 	# Data visualization
 
 	# Plotting the data
@@ -187,3 +186,4 @@ def launch() -> None:
 	plotter.save(
 		filename=FOLDER_OUTPUT_IMAGES + "/out-" + EXPERIMENT_DOMAIN + "." + settings.OUTPUT_IMAGE_FILE_EXTENSION)
 	# plotter.show()
+	"""

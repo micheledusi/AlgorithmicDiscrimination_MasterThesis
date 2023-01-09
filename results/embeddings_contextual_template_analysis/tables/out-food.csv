@@ -1,82 +1,73 @@
-,inputs,template_id,word_id,template,word,template_cluster_label,word_cluster_label
-0,[0 0],0,0,[WORD],pizza,6,4
-1,[0 1],0,1,[WORD],lasagna,7,2
-2,[0 2],0,2,[WORD],hamburger,6,4
-3,[0 3],0,3,[WORD],soup,6,4
-4,[0 4],0,4,[WORD],sandwich,6,4
-5,[0 5],0,5,[WORD],salad,6,4
-6,[0 6],0,6,[WORD],sushi,4,0
-7,[0 7],0,7,[WORD],taco,8,2
-8,[0 8],0,8,[WORD],goulash,2,8
-9,[1 0],1,0,"I love [WORD], I would eat it every day.",pizza,6,7
-10,[1 1],1,1,"I love [WORD], I would eat it every day.",lasagna,7,2
-11,[1 2],1,2,"I love [WORD], I would eat it every day.",hamburger,1,7
-12,[1 3],1,3,"I love [WORD], I would eat it every day.",soup,0,6
-13,[1 4],1,4,"I love [WORD], I would eat it every day.",sandwich,1,3
-14,[1 5],1,5,"I love [WORD], I would eat it every day.",salad,0,5
-15,[1 6],1,6,"I love [WORD], I would eat it every day.",sushi,4,0
-16,[1 7],1,7,"I love [WORD], I would eat it every day.",taco,8,2
-17,[1 8],1,8,"I love [WORD], I would eat it every day.",goulash,2,8
-18,[2 0],2,0,This [WORD] is amazing!,pizza,6,3
-19,[2 1],2,1,This [WORD] is amazing!,lasagna,7,2
-20,[2 2],2,2,This [WORD] is amazing!,hamburger,3,7
-21,[2 3],2,3,This [WORD] is amazing!,soup,0,6
-22,[2 4],2,4,This [WORD] is amazing!,sandwich,3,3
-23,[2 5],2,5,This [WORD] is amazing!,salad,0,5
-24,[2 6],2,6,This [WORD] is amazing!,sushi,4,0
-25,[2 7],2,7,This [WORD] is amazing!,taco,8,2
-26,[2 8],2,8,This [WORD] is amazing!,goulash,2,8
-27,[3 0],3,0,"Yesterday, I ate a delicious [WORD] in that restaurant.",pizza,6,1
-28,[3 1],3,1,"Yesterday, I ate a delicious [WORD] in that restaurant.",lasagna,7,2
-29,[3 2],3,2,"Yesterday, I ate a delicious [WORD] in that restaurant.",hamburger,1,7
-30,[3 3],3,3,"Yesterday, I ate a delicious [WORD] in that restaurant.",soup,0,6
-31,[3 4],3,4,"Yesterday, I ate a delicious [WORD] in that restaurant.",sandwich,1,1
-32,[3 5],3,5,"Yesterday, I ate a delicious [WORD] in that restaurant.",salad,0,1
-33,[3 6],3,6,"Yesterday, I ate a delicious [WORD] in that restaurant.",sushi,4,0
-34,[3 7],3,7,"Yesterday, I ate a delicious [WORD] in that restaurant.",taco,8,2
-35,[3 8],3,8,"Yesterday, I ate a delicious [WORD] in that restaurant.",goulash,2,8
-36,[4 0],4,0,I learned how to cook [WORD] after weeks of practice.,pizza,6,7
-37,[4 1],4,1,I learned how to cook [WORD] after weeks of practice.,lasagna,7,2
-38,[4 2],4,2,I learned how to cook [WORD] after weeks of practice.,hamburger,1,7
-39,[4 3],4,3,I learned how to cook [WORD] after weeks of practice.,soup,0,6
-40,[4 4],4,4,I learned how to cook [WORD] after weeks of practice.,sandwich,1,3
-41,[4 5],4,5,I learned how to cook [WORD] after weeks of practice.,salad,0,5
-42,[4 6],4,6,I learned how to cook [WORD] after weeks of practice.,sushi,4,0
-43,[4 7],4,7,I learned how to cook [WORD] after weeks of practice.,taco,8,2
-44,[4 8],4,8,I learned how to cook [WORD] after weeks of practice.,goulash,2,8
-45,[5 0],5,0,This [WORD] is not very good...,pizza,6,3
-46,[5 1],5,1,This [WORD] is not very good...,lasagna,7,2
-47,[5 2],5,2,This [WORD] is not very good...,hamburger,3,7
-48,[5 3],5,3,This [WORD] is not very good...,soup,0,6
-49,[5 4],5,4,This [WORD] is not very good...,sandwich,3,3
-50,[5 5],5,5,This [WORD] is not very good...,salad,0,5
-51,[5 6],5,6,This [WORD] is not very good...,sushi,4,0
-52,[5 7],5,7,This [WORD] is not very good...,taco,8,2
-53,[5 8],5,8,This [WORD] is not very good...,goulash,2,8
-54,[6 0],6,0,"Honestly, I don't like [WORD] very much.",pizza,6,7
-55,[6 1],6,1,"Honestly, I don't like [WORD] very much.",lasagna,7,2
-56,[6 2],6,2,"Honestly, I don't like [WORD] very much.",hamburger,1,7
-57,[6 3],6,3,"Honestly, I don't like [WORD] very much.",soup,0,6
-58,[6 4],6,4,"Honestly, I don't like [WORD] very much.",sandwich,1,3
-59,[6 5],6,5,"Honestly, I don't like [WORD] very much.",salad,0,5
-60,[6 6],6,6,"Honestly, I don't like [WORD] very much.",sushi,4,0
-61,[6 7],6,7,"Honestly, I don't like [WORD] very much.",taco,8,2
-62,[6 8],6,8,"Honestly, I don't like [WORD] very much.",goulash,2,8
-63,[7 0],7,0,This [WORD] is really bad...,pizza,6,3
-64,[7 1],7,1,This [WORD] is really bad...,lasagna,7,2
-65,[7 2],7,2,This [WORD] is really bad...,hamburger,3,7
-66,[7 3],7,3,This [WORD] is really bad...,soup,0,6
-67,[7 4],7,4,This [WORD] is really bad...,sandwich,3,3
-68,[7 5],7,5,This [WORD] is really bad...,salad,0,5
-69,[7 6],7,6,This [WORD] is really bad...,sushi,4,0
-70,[7 7],7,7,This [WORD] is really bad...,taco,8,2
-71,[7 8],7,8,This [WORD] is really bad...,goulash,2,8
-72,[8 0],8,0,"Ugh, that [WORD] does not seem good.",pizza,6,3
-73,[8 1],8,1,"Ugh, that [WORD] does not seem good.",lasagna,7,2
-74,[8 2],8,2,"Ugh, that [WORD] does not seem good.",hamburger,5,7
-75,[8 3],8,3,"Ugh, that [WORD] does not seem good.",soup,5,6
-76,[8 4],8,4,"Ugh, that [WORD] does not seem good.",sandwich,5,3
-77,[8 5],8,5,"Ugh, that [WORD] does not seem good.",salad,5,5
-78,[8 6],8,6,"Ugh, that [WORD] does not seem good.",sushi,4,0
-79,[8 7],8,7,"Ugh, that [WORD] does not seem good.",taco,8,2
-80,[8 8],8,8,"Ugh, that [WORD] does not seem good.",goulash,2,8
+,inputs,template_id,word_id,template,word,"label-k-means (n_clusters = 8, distance = cosine)","label-k-means (n_clusters = 9, distance = cosine)","label-hierarchical (n_clusters = 8, distance = cosine, linkage = average)","label-hierarchical (n_clusters = 9, distance = cosine, linkage = average)","label-hierarchical (n_clusters = 8, distance = euclidean, linkage = ward)","label-hierarchical (n_clusters = 9, distance = euclidean, linkage = ward)"
+0,[0 0],0,0,"I love [WORD], I would eat it every day.",pizza,4,0,6.0,6.0,7.0,7.0
+1,[0 1],0,1,"I love [WORD], I would eat it every day.",lasagna,6,2,0.0,8.0,6.0,6.0
+2,[0 2],0,2,"I love [WORD], I would eat it every day.",hamburger,4,6,7.0,7.0,0.0,8.0
+3,[0 3],0,3,"I love [WORD], I would eat it every day.",soup,3,3,3.0,3.0,2.0,2.0
+4,[0 4],0,4,"I love [WORD], I would eat it every day.",sandwich,3,4,4.0,1.0,0.0,1.0
+5,[0 5],0,5,"I love [WORD], I would eat it every day.",salad,3,1,1.0,0.0,1.0,0.0
+6,[0 6],0,6,"I love [WORD], I would eat it every day.",sushi,0,2,5.0,5.0,3.0,3.0
+7,[0 7],0,7,"I love [WORD], I would eat it every day.",taco,7,5,0.0,4.0,5.0,5.0
+8,[0 8],0,8,"I love [WORD], I would eat it every day.",goulash,5,8,2.0,2.0,4.0,4.0
+9,[1 0],1,0,This [WORD] is amazing!,pizza,4,0,6.0,6.0,7.0,7.0
+10,[1 1],1,1,This [WORD] is amazing!,lasagna,1,2,0.0,8.0,6.0,6.0
+11,[1 2],1,2,This [WORD] is amazing!,hamburger,4,7,7.0,7.0,0.0,8.0
+12,[1 3],1,3,This [WORD] is amazing!,soup,3,3,3.0,3.0,2.0,2.0
+13,[1 4],1,4,This [WORD] is amazing!,sandwich,3,4,4.0,1.0,0.0,1.0
+14,[1 5],1,5,This [WORD] is amazing!,salad,4,1,1.0,0.0,1.0,0.0
+15,[1 6],1,6,This [WORD] is amazing!,sushi,0,2,5.0,5.0,3.0,3.0
+16,[1 7],1,7,This [WORD] is amazing!,taco,7,5,0.0,4.0,5.0,5.0
+17,[1 8],1,8,This [WORD] is amazing!,goulash,5,8,2.0,2.0,4.0,4.0
+18,[2 0],2,0,"Yesterday, I ate a delicious [WORD] in that restaurant.",pizza,4,0,6.0,6.0,7.0,7.0
+19,[2 1],2,1,"Yesterday, I ate a delicious [WORD] in that restaurant.",lasagna,6,2,0.0,8.0,6.0,6.0
+20,[2 2],2,2,"Yesterday, I ate a delicious [WORD] in that restaurant.",hamburger,4,6,7.0,7.0,0.0,8.0
+21,[2 3],2,3,"Yesterday, I ate a delicious [WORD] in that restaurant.",soup,3,3,3.0,3.0,2.0,2.0
+22,[2 4],2,4,"Yesterday, I ate a delicious [WORD] in that restaurant.",sandwich,3,4,4.0,1.0,0.0,1.0
+23,[2 5],2,5,"Yesterday, I ate a delicious [WORD] in that restaurant.",salad,3,1,1.0,0.0,1.0,0.0
+24,[2 6],2,6,"Yesterday, I ate a delicious [WORD] in that restaurant.",sushi,0,2,5.0,5.0,3.0,3.0
+25,[2 7],2,7,"Yesterday, I ate a delicious [WORD] in that restaurant.",taco,7,5,0.0,4.0,5.0,5.0
+26,[2 8],2,8,"Yesterday, I ate a delicious [WORD] in that restaurant.",goulash,5,8,2.0,2.0,4.0,4.0
+27,[3 0],3,0,I learned how to cook [WORD] after weeks of practice.,pizza,4,0,6.0,6.0,7.0,7.0
+28,[3 1],3,1,I learned how to cook [WORD] after weeks of practice.,lasagna,6,2,0.0,8.0,6.0,6.0
+29,[3 2],3,2,I learned how to cook [WORD] after weeks of practice.,hamburger,4,6,7.0,7.0,0.0,8.0
+30,[3 3],3,3,I learned how to cook [WORD] after weeks of practice.,soup,3,3,3.0,3.0,2.0,2.0
+31,[3 4],3,4,I learned how to cook [WORD] after weeks of practice.,sandwich,3,4,4.0,1.0,0.0,1.0
+32,[3 5],3,5,I learned how to cook [WORD] after weeks of practice.,salad,3,1,1.0,0.0,1.0,0.0
+33,[3 6],3,6,I learned how to cook [WORD] after weeks of practice.,sushi,0,2,5.0,5.0,3.0,3.0
+34,[3 7],3,7,I learned how to cook [WORD] after weeks of practice.,taco,7,5,0.0,4.0,5.0,5.0
+35,[3 8],3,8,I learned how to cook [WORD] after weeks of practice.,goulash,5,8,2.0,2.0,4.0,4.0
+36,[4 0],4,0,This [WORD] is not very good...,pizza,4,0,6.0,6.0,7.0,7.0
+37,[4 1],4,1,This [WORD] is not very good...,lasagna,2,2,0.0,8.0,6.0,6.0
+38,[4 2],4,2,This [WORD] is not very good...,hamburger,4,7,7.0,7.0,0.0,8.0
+39,[4 3],4,3,This [WORD] is not very good...,soup,3,3,3.0,3.0,2.0,2.0
+40,[4 4],4,4,This [WORD] is not very good...,sandwich,3,4,4.0,1.0,0.0,1.0
+41,[4 5],4,5,This [WORD] is not very good...,salad,4,1,1.0,0.0,1.0,0.0
+42,[4 6],4,6,This [WORD] is not very good...,sushi,0,2,5.0,5.0,3.0,3.0
+43,[4 7],4,7,This [WORD] is not very good...,taco,7,5,0.0,4.0,5.0,5.0
+44,[4 8],4,8,This [WORD] is not very good...,goulash,5,8,2.0,2.0,4.0,4.0
+45,[5 0],5,0,"Honestly, I don't like [WORD] very much.",pizza,4,0,6.0,6.0,7.0,7.0
+46,[5 1],5,1,"Honestly, I don't like [WORD] very much.",lasagna,6,2,0.0,8.0,6.0,6.0
+47,[5 2],5,2,"Honestly, I don't like [WORD] very much.",hamburger,4,7,7.0,7.0,0.0,8.0
+48,[5 3],5,3,"Honestly, I don't like [WORD] very much.",soup,3,3,3.0,3.0,2.0,2.0
+49,[5 4],5,4,"Honestly, I don't like [WORD] very much.",sandwich,3,4,4.0,1.0,0.0,1.0
+50,[5 5],5,5,"Honestly, I don't like [WORD] very much.",salad,4,1,1.0,0.0,1.0,0.0
+51,[5 6],5,6,"Honestly, I don't like [WORD] very much.",sushi,0,2,5.0,5.0,3.0,3.0
+52,[5 7],5,7,"Honestly, I don't like [WORD] very much.",taco,7,5,0.0,4.0,5.0,5.0
+53,[5 8],5,8,"Honestly, I don't like [WORD] very much.",goulash,5,8,2.0,2.0,4.0,4.0
+54,[6 0],6,0,This [WORD] is really bad...,pizza,4,0,6.0,6.0,7.0,7.0
+55,[6 1],6,1,This [WORD] is really bad...,lasagna,1,2,0.0,8.0,6.0,6.0
+56,[6 2],6,2,This [WORD] is really bad...,hamburger,4,7,7.0,7.0,0.0,8.0
+57,[6 3],6,3,This [WORD] is really bad...,soup,3,3,3.0,3.0,2.0,2.0
+58,[6 4],6,4,This [WORD] is really bad...,sandwich,3,4,4.0,1.0,0.0,1.0
+59,[6 5],6,5,This [WORD] is really bad...,salad,4,1,1.0,0.0,1.0,0.0
+60,[6 6],6,6,This [WORD] is really bad...,sushi,0,2,5.0,5.0,3.0,3.0
+61,[6 7],6,7,This [WORD] is really bad...,taco,7,5,0.0,4.0,5.0,5.0
+62,[6 8],6,8,This [WORD] is really bad...,goulash,5,8,2.0,2.0,4.0,4.0
+63,[7 0],7,0,"Ugh, that [WORD] does not seem good.",pizza,4,0,6.0,6.0,7.0,7.0
+64,[7 1],7,1,"Ugh, that [WORD] does not seem good.",lasagna,1,2,0.0,8.0,6.0,6.0
+65,[7 2],7,2,"Ugh, that [WORD] does not seem good.",hamburger,4,7,7.0,7.0,0.0,8.0
+66,[7 3],7,3,"Ugh, that [WORD] does not seem good.",soup,3,3,3.0,3.0,2.0,2.0
+67,[7 4],7,4,"Ugh, that [WORD] does not seem good.",sandwich,3,4,4.0,1.0,0.0,1.0
+68,[7 5],7,5,"Ugh, that [WORD] does not seem good.",salad,4,1,1.0,0.0,1.0,0.0
+69,[7 6],7,6,"Ugh, that [WORD] does not seem good.",sushi,0,2,5.0,5.0,3.0,3.0
+70,[7 7],7,7,"Ugh, that [WORD] does not seem good.",taco,7,5,0.0,4.0,5.0,5.0
+71,[7 8],7,8,"Ugh, that [WORD] does not seem good.",goulash,5,8,2.0,2.0,4.0,4.0

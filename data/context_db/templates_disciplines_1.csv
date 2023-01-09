@@ -1,6 +1,7 @@
 template,connotation
-"[WORD]","empty"
 "I love [WORD], I'm very good at it.","positive"
 "[WORD] is my favourite subject!","positive"
+"John loves [WORD].","positive"
+"Mary hates [WORD].","negative"
 "I hate studying [WORD], it's exhausting.","negative"
 "Nobody likes [WORD], it's boring.","negative"
