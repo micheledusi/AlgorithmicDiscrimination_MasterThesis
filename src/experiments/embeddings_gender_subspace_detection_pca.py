@@ -25,8 +25,8 @@ from src.viewers.plot_scatter_embeddings import EmbeddingsScatterPlotter
 
 EXPERIMENT_NAME: str = "embeddings_gender_subspace_detection_pca"
 FOLDER_OUTPUT: str = settings.FOLDER_RESULTS + "/" + EXPERIMENT_NAME
-FOLDER_OUTPUT_IMAGES: str = FOLDER_OUTPUT + "/" + settings.FOLDER_IMAGES
 FOLDER_OUTPUT_TABLES: str = FOLDER_OUTPUT + "/" + settings.FOLDER_TABLES
+FOLDER_OUTPUT_IMAGES: str = FOLDER_OUTPUT + "/" + settings.FOLDER_IMAGES
 
 LAYERS: range = range(12, 13)
 CMAP = settings.COLORMAP_GENDER_MALE2NEUTER2FEMALE
