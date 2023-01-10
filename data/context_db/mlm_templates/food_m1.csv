@@ -1,0 +1,12 @@
+template,connotation
+"[MASK] loves [WORD].",positive
+"[MASK] loved [WORD].",positive
+"[MASK] has a passion for [WORD].",positive
+"[WORD] is everything [MASK] wants.",positive
+"[MASK] wished to eat more [WORD].",positive
+"[MASK] eats a lot of [WORD]",positive
+"If needed, [WORD] is the only thing [MASK]'ll eat forever.",positive
+"Some years ago, [MASK] served me the best [WORD] i've ever eaten.",positive
+"[MASK]'d prefer [WORD].",positive
+"I was impressed by the way [MASK] cooked the [WORD].",positive
+"They both prepared a great [WORD], but [MASK] was the best!",positive

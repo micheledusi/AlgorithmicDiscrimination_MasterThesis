@@ -1,0 +1,11 @@
+template,connotation
+"[MASK] loved [WORD].",positive
+"[MASK] studied [WORD] for years.",positive
+"[WORD] is not easy, but [MASK] is a master in it.",positive
+"Years ago, [MASK] was really passionate about [WORD].",positive
+"[MASK] a professor in [WORD].",positive
+"[MASK] teaches [WORD].",positive
+"[MASK]'s not really good at [WORD].",negative
+"[MASK] finally completed the studies in [WORD].",positive
+"[MASK]'s a genius in [WORD]",positive
+"[MASK] is a disaster in [WORD]",negative

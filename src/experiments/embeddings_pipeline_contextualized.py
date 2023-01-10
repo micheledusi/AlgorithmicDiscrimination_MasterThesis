@@ -38,16 +38,19 @@ FOLDER_INPUT_DATA: str = settings.FOLDER_DATA + "/context_db"
 # - The domain is the category of the words and templates. Ideally, each word-list has at least one domain-list, and vice-versa
 # - The ID, to distinguish different lists within the same domain (e.g. job_1 and job_2)
 EXPERIMENT_DOMAIN = "jobs"
-WORDS_FILE_ID: int = 2
-TEMPLATES_FILE_ID: int = 2
+WORDS_FILE_ID: int = 1
+TEMPLATES_FILE_ID: int = 1
 MLM_TEMPLATES_FILE_ID: int = 1
 EXPERIMENT_WORDS_FILE = FOLDER_INPUT_DATA + f"/words/{EXPERIMENT_DOMAIN}_w{WORDS_FILE_ID}.csv"
 EXPERIMENT_TEMPLATES_FILE = FOLDER_INPUT_DATA + f"/embs_templates/{EXPERIMENT_DOMAIN}_t{TEMPLATES_FILE_ID}.csv"
 EXPERIMENT_MLM_TEMPLATES_FILE = FOLDER_INPUT_DATA + f"/mlm_templates/{EXPERIMENT_DOMAIN}_m{MLM_TEMPLATES_FILE_ID}.csv"
+RESULTS_DB_FILE: str = EXPERIMENT_DOMAIN + "-contextualized-pipeline-db"
 
 LAYERS: range = range(12, 13)
 LAYERS_LABELS: list[str] = [f"{layer:02d}" for layer in LAYERS]
 INTERMEDIATE_FEATURES_NUMBER: int = 50
+
+CHART_LABELS_MAX_NUMBER: int = 30
 
 
 def get_trained_pipeline() -> PipelineReducer:
@@ -140,11 +143,10 @@ def compute_mlm_gender_polarization(words_list: list[str]) -> list[float]:
 
 def launch() -> None:
 	ser: Serializer = Serializer()
-	results_file: str = EXPERIMENT_DOMAIN + "-contextualized-pipeline-db"
 
-	if ser.has_dataset(results_file):
+	if ser.has_dataset(RESULTS_DB_FILE):
 		print("Loading results from file...")
-		results = ser.load_dataset(results_file)
+		results: Dataset = ser.load_dataset(RESULTS_DB_FILE)
 	else:
 		print("Creating and training pipeline...")
 		pipeline: PipelineReducer = get_trained_pipeline()
@@ -165,11 +167,11 @@ def launch() -> None:
 		polarization: list[float] = compute_mlm_gender_polarization(words_list["word"])
 
 		print("Packing results...")
-		results = words_list \
+		results: Dataset = words_list \
 			.add_column("x", reduced_embeddings[0]) \
 			.add_column("y", reduced_embeddings[1]) \
 			.add_column("mlm-polarization", polarization)
-		ser.save_dataset(dataset=results, file_id=results_file)
+		ser.save_dataset(dataset=results, file_id=RESULTS_DB_FILE)
 
 		print("Saving results to CSV...")
 		results.to_csv(
@@ -178,12 +180,24 @@ def launch() -> None:
 
 	# Plotting the data
 	print("Plotting results on image chart...")
+	words_count: int = len(results)
+	# print("Number of words: ", words_count)
 	embs: torch.Tensor = torch.stack([torch.tensor(results["x"]), torch.tensor(results["y"])])
 	embs = torch.swapaxes(embs, 1, 0)
 	plotter: EmbeddingsScatterPlotter = EmbeddingsScatterPlotter(embeddings=torch.tensor(embs))
 	plotter.colormap = settings.COLORMAP_GENDER_MALE2TRANSPARENT2FEMALE
-	if len(results) < 30:
+	if words_count < CHART_LABELS_MAX_NUMBER:
 		plotter.labels = results["word"]
+	else:
+		# Sorting based on MLM score to obtain most extreme words
+		extreme_words_half_count = CHART_LABELS_MAX_NUMBER / 2
+		percentage = extreme_words_half_count / words_count * 100
+		lower_threshold = np.percentile(results["mlm-polarization"], percentage)
+		upper_threshold = np.percentile(results["mlm-polarization"], 100 - percentage)
+		print(lower_threshold, upper_threshold)
+		plotter.labels = [record["word"] if record["mlm-polarization"] < lower_threshold \
+		                                    or record["mlm-polarization"] > upper_threshold else "" \
+		                  for record in results]
 	plotter.colors = results["mlm-polarization"]
 	plotter.plot_2d_pc()
 	plotter.save(
