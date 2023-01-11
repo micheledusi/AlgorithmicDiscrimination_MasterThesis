@@ -38,8 +38,8 @@ FOLDER_INPUT_DATA: str = settings.FOLDER_DATA + "/context_db"
 # - The domain is the category of the words and templates. Ideally, each word-list has at least one domain-list, and vice-versa
 # - The ID, to distinguish different lists within the same domain (e.g. job_1 and job_2)
 EXPERIMENT_DOMAIN = "jobs"
-WORDS_FILE_ID: int = 1
-TEMPLATES_FILE_ID: int = 1
+WORDS_FILE_ID: int = 2
+TEMPLATES_FILE_ID: int = 3
 MLM_TEMPLATES_FILE_ID: int = 1
 EXPERIMENT_WORDS_FILE = FOLDER_INPUT_DATA + f"/words/{EXPERIMENT_DOMAIN}_w{WORDS_FILE_ID}.csv"
 EXPERIMENT_TEMPLATES_FILE = FOLDER_INPUT_DATA + f"/embs_templates/{EXPERIMENT_DOMAIN}_t{TEMPLATES_FILE_ID}.csv"
@@ -48,7 +48,7 @@ RESULTS_DB_FILE: str = EXPERIMENT_DOMAIN + "-contextualized-pipeline-db"
 
 LAYERS: range = range(12, 13)
 LAYERS_LABELS: list[str] = [f"{layer:02d}" for layer in LAYERS]
-INTERMEDIATE_FEATURES_NUMBER: int = 50
+INTERMEDIATE_FEATURES_NUMBER: int = 30
 
 CHART_LABELS_MAX_NUMBER: int = 30
 
@@ -195,8 +195,10 @@ def launch() -> None:
 		lower_threshold = np.percentile(results["mlm-polarization"], percentage)
 		upper_threshold = np.percentile(results["mlm-polarization"], 100 - percentage)
 		print(lower_threshold, upper_threshold)
-		plotter.labels = [record["word"] if record["mlm-polarization"] < lower_threshold \
-		                                    or record["mlm-polarization"] > upper_threshold else "" \
+		plotter.labels = [record["word"]
+		                  if record["mlm-polarization"] < lower_threshold
+		                  or record["mlm-polarization"] > upper_threshold
+		                  else ""
 		                  for record in results]
 	plotter.colors = results["mlm-polarization"]
 	plotter.plot_2d_pc()

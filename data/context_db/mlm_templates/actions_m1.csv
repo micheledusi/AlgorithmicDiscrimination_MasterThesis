@@ -1,0 +1,10 @@
+template,connotation
+"[MASK] [WORD]s.",positive
+"[MASK] loves to [WORD]!",positive
+"[MASK] is able to [WORD] very well.",positive
+"I think [MASK]'ll be glad to [WORD].",positive
+"In weekends, [MASK] [WORD]s a lot.",positive
+"When [MASK] was asked to [WORD], things went different.",positive
+"As far as I know, [MASK] [WORD]s at least once a week.",positive
+"In order to [WORD], [MASK] began to train every day.",positive
+"[MASK] taught me how to [WORD] properly.",positive

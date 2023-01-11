@@ -26,9 +26,9 @@ FOLDER_INPUT_DATA: str = settings.FOLDER_DATA + "/context_db"
 # - The type is either "words" or "templates", according to the csv content
 # - The domain is the category of the words and templates. Ideally, each word-list has at least one domain-list, and vice-versa
 # - The ID, to distinguish different lists within the same domain (e.g. job_1 and job_2)
-EXPERIMENT_DOMAIN = "disciplines"
-WORDS_FILE_ID: int = 1
-TEMPLATES_FILE_ID: int = 1
+EXPERIMENT_DOMAIN = "jobs"
+WORDS_FILE_ID: int = 2
+TEMPLATES_FILE_ID: int = 3
 EXPERIMENT_WORDS_FILE = FOLDER_INPUT_DATA + f"/words/{EXPERIMENT_DOMAIN}_w{WORDS_FILE_ID}.csv"
 EXPERIMENT_TEMPLATES_FILE = FOLDER_INPUT_DATA + f"/embs_templates/{EXPERIMENT_DOMAIN}_t{TEMPLATES_FILE_ID}.csv"
 
